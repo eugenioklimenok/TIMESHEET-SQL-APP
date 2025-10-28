@@ -29,8 +29,8 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 INSERT INTO users (username, name, email, status_id) VALUES
-    ('admin', 'admin', 'admin@app.com', 1),
-    ('alex', 'alex', 'alex@app.com', 0)
+    ('admin', 'admin', 'eugenioklimenok@gmail.com', 1),
+    ('alex', 'alex', 'mundoerp.latam@gmail.com', 0)
 ON CONFLICT DO NOTHING;
 
 -- 03. Create accounts table
@@ -42,9 +42,9 @@ CREATE TABLE IF NOT EXISTS accounts (
 );
 
 INSERT INTO accounts (name) VALUES
-    ('Globex Corporation'),
-    ('Initech LLC'),
-    ('Wayne Enterprises')
+    ('Softland Argentina'),
+    ('Swissport'),
+    ('CisLatam')
 ON CONFLICT DO NOTHING;
 
 -- 04. Create project_status table
