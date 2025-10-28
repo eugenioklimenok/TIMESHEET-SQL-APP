@@ -1,5 +1,3 @@
-
-
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 CREATE TABLE IF NOT EXISTS users (
@@ -14,6 +12,12 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 
+select * from users;
 
 
+/* truncate table users;
 
+
+alter TABLE users 
+add COLUMN status_id SMALLINT REFERENCES user_status(id) DEFAULT 0 NOT NULL;
+ */
