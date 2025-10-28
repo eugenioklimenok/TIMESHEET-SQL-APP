@@ -7,9 +7,9 @@ CREATE TABLE IF NOT EXISTS timesheet_status (
 
 -- Inserts iniciales
 INSERT INTO timesheet_status (id, name) VALUES
-    (0, 'Borrador'),
-    (1, 'Enviado'),
-    (2, 'Aprobado'),
-    (3, 'Rechazado'),
-    (4, 'Facturado')
+    (0, 'Draft'),
+    (1, 'Submitted'),
+    (2, 'Approved'),
+    (3, 'Rejected'),
+    (4, 'Billed')
 ON CONFLICT DO NOTHING;
