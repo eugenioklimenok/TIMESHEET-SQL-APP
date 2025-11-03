@@ -1,13 +1,10 @@
--- ========================================
--- TABLA PRINCIPAL: users
--- ========================================
+DROP TABLE IF EXISTS users CASCADE;
 
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    username VARCHAR(50) UNIQUE NOT NULL,
-    name VARCHAR(100) NOT NULL,
+    user_id VARCHAR(25) NOT NULL UNIQUE,
+    name VARCHAR(100),
     email VARCHAR(150) UNIQUE NOT NULL,
     profile VARCHAR(50),
     role VARCHAR(50),
@@ -15,8 +12,6 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Insert de usuarios de prueba
-INSERT INTO users (username, name, email)
-VALUES 
-  ('admin', 'Administrador General', 'admin@app.com'),
-  ('alex', 'Alex Zajarov', 'alex@app.com');
+INSERT INTO users (id, user_id, name, email, profile, role, status_id) VALUES
+  ('7cc7272a-8fb8-4c0a-b847-289923f96578', 'Azajarov', 'Alex Zajarov', 'mundoerp.latam@gmail.com', 'Consultant', 'Admin', 1),
+  ('9a2bb080-4da2-46ab-b0a8-ba651bca175b', 'Eklimenok', 'Eugenio Klimenok', 'eugenioklimenok@gmail.com', 'Functional', 'User', 1);
