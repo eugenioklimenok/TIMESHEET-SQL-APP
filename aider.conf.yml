@@ -1,0 +1,42 @@
+# aider.conf.yml — Configuración oficial para TimeSheet App (Alex • ERP Insider LATAM)
+
+# === MODELO PRINCIPAL ===
+model: openai/qwen2.5-coder:7b
+api_base: http://192.168.1.50:11434/v1
+api_key: ollama
+
+# === MODELO PARA EDICIÓN (MISMOS PARAMETROS) ===
+editor_model: openai/qwen2.5-coder:7b
+editor_api_base: http://192.168.1.50:11434/v1
+editor_api_key: ollama
+
+# === CONTEXTO PERMANENTE ===
+read_context_files:
+  - AIDER_CONTEXT.md
+  - vibe_rules.md
+  - README.md
+
+# === MODOS DE CAMBIO ===
+change_mode: conservative     # Nunca romper cosas
+diff: true                    # Mostrar cambios siempre
+warn_on_change: true          # Advertir antes de cambios grandes
+auto_commits: true            # Commit automático por cada cambio
+dirty_commits: false
+
+# === ARCHIVOS RELEVANTES ===
+file_extensions:
+  - ".py"
+  - ".sql"
+  - ".md"
+  - ".yml"
+  - ".yaml"
+
+# === GIT ===
+use_git: true
+gitignore_file: .gitignore
+
+# === PROFUNDIDAD DE ANÁLISIS ===
+context_window: 160000        # qwen 7B soporta contextos largos
+
+# === COMPORTAMIENTO GENERAL ===
+watch_files: true
