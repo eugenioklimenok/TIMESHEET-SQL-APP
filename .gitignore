@@ -5,3 +5,4 @@
 # Otros archivos sensibles
 __pycache__/
 *.pyc
+.aider*
