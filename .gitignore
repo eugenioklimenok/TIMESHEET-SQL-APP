@@ -1,0 +1,7 @@
+# Nunca subir credenciales
+.env
+*.env
+
+# Otros archivos sensibles
+__pycache__/
+*.pyc
