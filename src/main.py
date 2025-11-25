@@ -1,8 +1,12 @@
+# Importar librerías
 from fastapi import FastAPI
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import sessionmaker
+from src.database import get_db, engine, SessionLocal
+from src.users.routes import users_router
+from src.accounts.routes import accounts_router
 
 # Importar variables de entorno
 from config import DB_HOST, DB_USER, DB_PASSWORD, DB_NAME, DB_PORT
@@ -10,14 +14,8 @@ from config import DB_HOST, DB_USER, DB_PASSWORD, DB_NAME, DB_PORT
 # Crear una instancia de FastAPI
 app = FastAPI()
 
-# Crear una conexión a la base de datos
-SQLALCHEMY_DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
-
 # Crear una base de datos declarativa
 Base = declarative_base()
-
-# Crear una sesión
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=create_engine(SQLALCHEMY_DATABASE_URL))
 
 # Definir la tabla de users
 class User(Base):
@@ -28,9 +26,25 @@ class User(Base):
     hashed_password = Column(String)
 
 # Crear todas las tablas
-Base.metadata.create_all(bind=create_engine(SQLALCHEMY_DATABASE_URL))
+Base.metadata.create_all(bind=engine)
 
 # Definir la ruta raíz
 @app.get("/")
 def read_root():
     return {"Hola": "Mundo"}
+
+# Inicializar routers
+app.include_router(users_router)
+app.include_router(accounts_router)
+
+# Manejar eventos de startup y shutdown de la base de datos
+@app.on_event("startup")
+def database_startup():
+    import asyncio
+    asyncio.get_event_loop().run_until_complete(engine.dispose())
+
+@app.on_event("shutdown")
+def database_shutdown():
+    import asyncio
+    asyncio.get_event_loop().run_until_complete(engine.dispose())
+
