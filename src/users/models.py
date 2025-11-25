@@ -12,12 +12,6 @@ Base = declarative_base()
 class UserBase(BaseModel):
     """Base class for user models"""
     email: str
-
-
-
-
-
-
     password: str  # Consider using bcrypt or another secure method for storing passwords
     nombre: str
     apellido: str
