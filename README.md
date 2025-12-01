@@ -113,15 +113,14 @@ El proyecto usa una estructura limpia, escalable y orientada a
 producción:
 
     app/
-      main.py
-      routers/
-      schemas/
-      crud/
-      models/
-      core/
-      dependencies.py
-    sql/
-    migrations/
+      main.py              # Punto de entrada FastAPI
+      core/database.py     # Engine y sesiones centralizadas
+      routers/             # Routers de usuarios, cuentas y timesheets
+      schemas/             # Esquemas Pydantic para entrada/salida
+      crud/                # Operaciones de acceso a datos
+      models/              # Modelos SQLModel
+    sql/                   # Scripts SQL raw
+    migrations/            # Historial de Alembic
     tests/
     aider.conf.yml
     vibe_rules.md
@@ -130,6 +129,10 @@ producción:
     README.md
     docker-compose.yml
     Dockerfile
+
+El catálogo `migrations/` está inicializado con Alembic listo para generar
+versiones (ajusta `alembic.ini` o la variable de entorno `DATABASE_URL` para
+apuntar a tu base de datos). Los scripts raw permanecen en `sql/`.
 
 Tecnologías principales:
 
