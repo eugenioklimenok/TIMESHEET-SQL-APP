@@ -1,14 +1,15 @@
-from datetime import date
+from datetime import date, datetime
 from typing import Optional
+from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class TimesheetBase(BaseModel):
-    project_id: int
-    start_date: date
-    end_date: date
-    hours_worked: float = Field(gt=0)
+    user_uuid: UUID
+    project_uuid: UUID
+    work_date: date
+    status_id: Optional[int] = 0
 
 
 class TimesheetCreate(TimesheetBase):
@@ -16,10 +17,10 @@ class TimesheetCreate(TimesheetBase):
 
 
 class TimesheetRead(TimesheetBase):
-    id: int
+    id: UUID
+    created_at: Optional[datetime] = None
 
 
 class TimesheetUpdate(BaseModel):
-    start_date: Optional[date] = None
-    end_date: Optional[date] = None
-    hours_worked: Optional[float] = Field(default=None, gt=0)
+    work_date: Optional[date] = None
+    status_id: Optional[int] = None

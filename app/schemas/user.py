@@ -1,24 +1,32 @@
+from datetime import datetime
 from typing import Optional
+from uuid import UUID
 
 from pydantic import BaseModel, EmailStr
 
 
 class UserBase(BaseModel):
+    user_id: str
+    name: Optional[str] = None
     email: EmailStr
-    nombre: Optional[str] = None
-    apellido: Optional[str] = None
+    profile: Optional[str] = None
+    role: Optional[str] = None
+    status_id: Optional[int] = 1
 
 
 class UserCreate(UserBase):
-    password: str
+    pass
 
 
 class UserRead(UserBase):
-    id: int
+    id: UUID
+    created_at: Optional[datetime] = None
 
 
 class UserUpdate(BaseModel):
+    user_id: Optional[str] = None
+    name: Optional[str] = None
     email: Optional[EmailStr] = None
-    nombre: Optional[str] = None
-    apellido: Optional[str] = None
-    password: Optional[str] = None
+    profile: Optional[str] = None
+    role: Optional[str] = None
+    status_id: Optional[int] = None

@@ -1,11 +1,11 @@
 from typing import List
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session
 
 from app import crud
 from app.core.database import get_session
-from app.models import Timesheet
 from app.schemas import TimesheetCreate, TimesheetRead, TimesheetUpdate
 
 router = APIRouter(prefix="/timesheets", tags=["timesheets"])
@@ -25,9 +25,9 @@ def list_timesheets(session: Session = Depends(get_session)) -> List[TimesheetRe
 
 @router.patch("/{timesheet_id}", response_model=TimesheetRead)
 def update_timesheet(
-    timesheet_id: int, timesheet_in: TimesheetUpdate, session: Session = Depends(get_session)
+    timesheet_id: UUID, timesheet_in: TimesheetUpdate, session: Session = Depends(get_session)
 ) -> TimesheetRead:
-    timesheet = session.get(Timesheet, timesheet_id)
+    timesheet = crud.get_timesheet(session, timesheet_id)
     if not timesheet:
         raise HTTPException(status_code=404, detail="Parte de horas no encontrado")
     updated_timesheet = crud.update_timesheet(session, timesheet, timesheet_in)

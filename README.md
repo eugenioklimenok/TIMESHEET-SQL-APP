@@ -70,28 +70,33 @@ Relación: - `header_id` → `timesheet_header(id)`
 
 ## 📁 2. Archivos SQL incluidos
 
-  -----------------------------------------------------------------------
-  Archivo                       Contenido
-  ----------------------------- -----------------------------------------
-  `00_full_init_draft.sql`      Script completo para crear la base,
-                                tablas y seeds
+Los scripts están divididos entre **inicialización** (`sql/init/`) y
+**semillas** (`sql/seed/`).
 
-  `01_user_status.sql`          Tabla + datos de estados de usuario
+**Orden recomendado para inicializar la estructura**
 
-  `02_users.sql`                Tabla de usuarios
+1. `sql/init/01_user_status.sql`
+2. `sql/init/02_users.sql`
+3. `sql/init/03_accounts.sql`
+4. `sql/init/04_project_status.sql`
+5. `sql/init/05_projects.sql`
+6. `sql/init/06_timesheet_status.sql`
+7. `sql/init/07_timesheet_header.sql`
+8. `sql/init/08_timesheet_item.sql`
 
-  `03_accounts.sql`             Tabla de cuentas
+**Orden recomendado para seed de datos base** (mismo orden de dependencias):
 
-  `04_project_status.sql`       Tabla de estados de proyectos
+1. `sql/seed/01_user_status.sql`
+2. `sql/seed/02_users.sql`
+3. `sql/seed/03_accounts.sql`
+4. `sql/seed/04_project_status.sql`
+5. `sql/seed/05_projects.sql`
+6. `sql/seed/06_timesheet_status.sql`
+7. `sql/seed/07_timesheet_header.sql`
+8. `sql/seed/08_timesheet_item.sql`
 
-  `05_projects.sql`             Tabla de proyectos
-
-  `06_timesheet_status.sql`     Tabla de estados del parte
-
-  `07_timesheet_header.sql`     Cabecera del parte diario
-
-  `08_timesheet_item.sql`       Detalle de cada registro de horas
-  -----------------------------------------------------------------------
+Para un arranque rápido puedes usar el script completo con datos de ejemplo
+en `sql/init/00_full_init_draft.sql`.
 
 ------------------------------------------------------------------------
 
@@ -100,7 +105,7 @@ Relación: - `header_id` → `timesheet_header(id)`
 Asegurate de tener PostgreSQL 16 con la extensión `uuid-ossp`.
 
 ``` bash
-psql -U tu_usuario -d tu_base -f sql/00_full_init_draft.sql
+psql -U tu_usuario -d tu_base -f sql/init/00_full_init_draft.sql
 ```
 
 Con esto tendrás toda la estructura + datos mínimos para comenzar.
@@ -130,9 +135,10 @@ producción:
     docker-compose.yml
     Dockerfile
 
-El catálogo `migrations/` está inicializado con Alembic listo para generar
-versiones (ajusta `alembic.ini` o la variable de entorno `DATABASE_URL` para
-apuntar a tu base de datos). Los scripts raw permanecen en `sql/`.
+El catálogo `migrations/` incluye la primera versión del esquema
+(`migrations/versions/9c1e41e7a8b0_initial_schema.py`). Ajusta `alembic.ini`
+o la variable de entorno `DATABASE_URL` para apuntar a tu base de datos y
+ejecuta `alembic upgrade head` para aplicar la estructura.
 
 Tecnologías principales:
 

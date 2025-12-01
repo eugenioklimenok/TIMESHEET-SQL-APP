@@ -1,24 +1,26 @@
+from datetime import datetime
 from typing import Optional
+from uuid import UUID
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 
 
 class AccountBase(BaseModel):
-    email: EmailStr
-    nombre: Optional[str] = None
-    apellido: Optional[str] = None
+    account_id: str
+    name: str
+    type: Optional[str] = None
 
 
 class AccountCreate(AccountBase):
-    password: str
+    pass
 
 
 class AccountRead(AccountBase):
-    id: int
+    id: UUID
+    created_at: Optional[datetime] = None
 
 
 class AccountUpdate(BaseModel):
-    email: Optional[EmailStr] = None
-    nombre: Optional[str] = None
-    apellido: Optional[str] = None
-    password: Optional[str] = None
+    account_id: Optional[str] = None
+    name: Optional[str] = None
+    type: Optional[str] = None
