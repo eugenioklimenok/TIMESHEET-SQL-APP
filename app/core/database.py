@@ -4,7 +4,9 @@ import os
 from typing import Generator
 
 from dotenv import load_dotenv
-from sqlmodel import Session, SQLModel, create_engine
+from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
+from sqlmodel import Session, create_engine
 
 load_dotenv()
 
@@ -29,8 +31,17 @@ def get_session() -> Generator[Session, None, None]:
 
 
 def init_db() -> None:
-    """Crear las tablas registradas en los modelos."""
-    # Registrar todos los modelos antes de crear las tablas.
+    """Validar la conexión y asegurar que los modelos estén registrados.
+
+    Las tablas se crean y versionan vía migraciones de Alembic. Este
+    helper solo comprueba la conectividad y carga los modelos para que el
+    contexto de Alembic conozca el metadata de SQLModel.
+    """
+
     import app.models  # noqa: WPS433 - registro de metadatos
 
-    SQLModel.metadata.create_all(engine)
+    try:
+        with engine.connect() as connection:
+            connection.execute(text("SELECT 1"))
+    except SQLAlchemyError as exc:  # pragma: no cover - fallback defensivo
+        raise RuntimeError("No se pudo iniciar la conexión a la base de datos") from exc

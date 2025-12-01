@@ -12,7 +12,7 @@ app = FastAPI(
 
 @app.on_event("startup")
 def on_startup() -> None:
-    """Crear tablas y preparar la base de datos en el arranque."""
+    """Validar conexión y registrar metadata para migraciones."""
     init_db()
 
 
