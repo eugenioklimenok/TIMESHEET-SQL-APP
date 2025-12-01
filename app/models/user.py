@@ -3,7 +3,6 @@ from typing import List, Optional, TYPE_CHECKING
 from uuid import UUID, uuid4
 
 from sqlalchemy import Column, DateTime, String, text
-from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlmodel import Field, Relationship, SQLModel
 
 if TYPE_CHECKING:
@@ -13,7 +12,7 @@ if TYPE_CHECKING:
 class UserStatus(SQLModel, table=True):
     __tablename__ = "user_status"
 
-    id: int = Field(primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     status_name: str = Field(sa_column=Column(String(50), nullable=False, unique=True))
 
     users: List["User"] = Relationship(back_populates="status")
@@ -22,10 +21,7 @@ class UserStatus(SQLModel, table=True):
 class User(SQLModel, table=True):
     __tablename__ = "users"
 
-    id: UUID = Field(
-        default_factory=uuid4,
-        sa_column=Column(PGUUID(as_uuid=True), primary_key=True, server_default=text("uuid_generate_v4()")),
-    )
+    id: UUID = Field(default_factory=uuid4, primary_key=True, index=True)
     user_id: str = Field(sa_column=Column(String(25), unique=True, nullable=False, index=True))
     name: Optional[str] = Field(default=None, sa_column=Column(String(100)))
     email: str = Field(sa_column=Column(String(150), unique=True, nullable=False))

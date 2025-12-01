@@ -3,7 +3,6 @@ from typing import List, Optional, TYPE_CHECKING
 from uuid import UUID, uuid4
 
 from sqlalchemy import Boolean, CheckConstraint, Column, Date, DateTime, Numeric, String, Text, text
-from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlmodel import Field, Relationship, SQLModel
 
 if TYPE_CHECKING:
@@ -14,7 +13,7 @@ if TYPE_CHECKING:
 class TimesheetStatus(SQLModel, table=True):
     __tablename__ = "timesheet_status"
 
-    id: int = Field(primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     name: str = Field(sa_column=Column(String(50), nullable=False))
 
     headers: List["TimesheetHeader"] = Relationship(back_populates="status")
@@ -23,10 +22,7 @@ class TimesheetStatus(SQLModel, table=True):
 class TimesheetHeader(SQLModel, table=True):
     __tablename__ = "timesheet_header"
 
-    id: UUID = Field(
-        default_factory=uuid4,
-        sa_column=Column(PGUUID(as_uuid=True), primary_key=True, server_default=text("uuid_generate_v4()")),
-    )
+    id: UUID = Field(default_factory=uuid4, primary_key=True, index=True)
     user_uuid: UUID = Field(foreign_key="users.id")
     project_uuid: UUID = Field(foreign_key="projects.id")
     work_date: date = Field(sa_column=Column(Date, nullable=False))
@@ -44,10 +40,7 @@ class TimesheetHeader(SQLModel, table=True):
 class TimesheetItem(SQLModel, table=True):
     __tablename__ = "timesheet_item"
 
-    id: UUID = Field(
-        default_factory=uuid4,
-        sa_column=Column(PGUUID(as_uuid=True), primary_key=True, server_default=text("uuid_generate_v4()")),
-    )
+    id: UUID = Field(default_factory=uuid4, primary_key=True, index=True)
     header_uuid: UUID = Field(foreign_key="timesheet_header.id")
     description: str = Field(sa_column=Column(Text, nullable=False))
     hours: float = Field(sa_column=Column(Numeric(5, 2), nullable=False))
