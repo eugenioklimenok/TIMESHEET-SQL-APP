@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Literal, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, EmailStr
@@ -19,7 +19,7 @@ class UserBase(BaseModel):
     name: Optional[str] = None
     email: EmailStr
     profile: Optional[str] = None
-    role: Optional[str] = None
+    role: Literal["admin", "user"] = "user"
     status_id: Optional[int] = 1
 
 
@@ -39,6 +39,6 @@ class UserUpdate(BaseModel):
     name: Optional[str] = None
     email: Optional[EmailStr] = None
     profile: Optional[str] = None
-    role: Optional[str] = None
+    role: Optional[Literal["admin", "user"]] = None
     status_id: Optional[int] = None
     password: Optional[str] = None

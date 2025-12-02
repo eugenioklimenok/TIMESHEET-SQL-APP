@@ -6,10 +6,14 @@ from sqlmodel import Session
 
 from app import crud
 from app.core.dependencies import get_session
-from app.core.security import get_current_user
+from app.core.security import role_required
 from app.schemas import AccountCreate, AccountRead, AccountUpdate, ProjectCreate, ProjectRead, ProjectUpdate
 
-router = APIRouter(prefix="/accounts", tags=["accounts"], dependencies=[Depends(get_current_user)])
+router = APIRouter(
+    prefix="/accounts",
+    tags=["accounts"],
+    dependencies=[Depends(role_required("admin"))],
+)
 
 
 @router.post("/", response_model=AccountRead, status_code=201)
