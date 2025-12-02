@@ -13,6 +13,7 @@
 - CRUD sin capas de servicio: operaciones directas para crear/listar/actualizar/eliminar usuarios, cuentas, proyectos, cabeceras e ítems de timesheet.
 - Esquemas Pydantic v2 para entrada/salida en usuarios, cuentas/proyectos y timesheets.
 - Inicialización de base con `init_db()` y dependencia `get_session()` centralizada para sesiones SQLModel.
+- T1 (Autenticación JWT básica) ya está implementada en el repositorio: login con emisión/validación de tokens, hashing de contraseñas y dependencias de seguridad activas en los routers.
 
 ## 2. Faltantes del Backend
 - Autenticación/autorización (JWT, roles, permisos) y protección de rutas.
@@ -29,8 +30,8 @@ Asegurar autenticación, seguridad y control de estados mínimos.
 
 | ID  | Título                         | Descripción técnica                                                                 | Dependencias |
 |-----|--------------------------------|-------------------------------------------------------------------------------------|--------------|
-| T1  | Autenticación JWT básica       | Implementar login con emisión/validación de tokens, hashing de contraseñas y guardas de ruta. | —            |
-| T2  | Modelo de roles y permisos     | Definir roles (admin/user) y dependencias de autorización en routers sensibles.     | T1           |
+| T1  | Autenticación JWT básica (COMPLETADA) | Implementar login con emisión/validación de tokens, hashing de contraseñas y guardas de ruta. Implementado en el repositorio. | —            |
+| T2  | Modelo de roles y permisos     | Definir roles (admin/user) y dependencias de autorización en routers sensibles.     | T1 (cumplida) |
 | T3  | Gestión de estados iniciales   | CRUD para tablas de estado (`user_status`, `project_status`, `timesheet_status`) y valores seed. | —            |
 | T4  | Validación de transiciones     | Reglas para mover timesheets entre estados permitidos (draft→submitted→approved) con errores claros. | T3           |
 
@@ -39,8 +40,8 @@ Añadir reglas de negocio y mejoras de datos.
 
 | ID  | Título                               | Descripción técnica                                                             | Dependencias |
 |-----|--------------------------------------|---------------------------------------------------------------------------------|--------------|
-| T5  | Validaciones de dominio              | Chequear unicidad de IDs combinados, límites de horas (>0 y <=24/día), fechas no futuras. | T1, T3       |
-| T6  | Filtrado y paginación de listados    | Añadir query params por cuenta/proyecto/usuario/estado/fecha y paginación estándar. | T1           |
+| T5  | Validaciones de dominio              | Chequear unicidad de IDs combinados, límites de horas (>0 y <=24/día), fechas no futuras. | T1 (cumplida), T3       |
+| T6  | Filtrado y paginación de listados    | Añadir query params por cuenta/proyecto/usuario/estado/fecha y paginación estándar. | T1 (cumplida)           |
 | T7  | Relaciones y preload eficientes      | Incluir `joinload`/`selectinload` en queries para evitar N+1 y exponer anidados en schemas. | T6           |
 
 ### Fase 3: Calidad y entrega
@@ -49,11 +50,11 @@ Fortalecer pruebas, observabilidad y despliegue.
 | ID  | Título                               | Descripción técnica                                                             | Dependencias |
 |-----|--------------------------------------|---------------------------------------------------------------------------------|--------------|
 | T8  | Pruebas automatizadas                | Tests unitarios/integ. para CRUD/routers con SQLite en memoria y fixtures de datos. | T5, T6       |
-| T9  | Documentación y ejemplos de API      | Actualizar README/Swagger con flujos, auth y ejemplos curl/httpie.               | T1, T6       |
+| T9  | Documentación y ejemplos de API      | Actualizar README/Swagger con flujos, auth y ejemplos curl/httpie.               | T1 (cumplida), T6       |
 | T10 | Contenedorización y CI               | Revisar Docker/compose, agregar pipeline (lint+tests+migrations) en CI.          | T8, T9       |
 
 ## 4. Orden Recomendado
-1. T1 → Autenticación JWT básica
+1. T1 (completada) → Autenticación JWT básica
 2. T2 → Modelo de roles y permisos
 3. T3 → Gestión de estados iniciales
 4. T4 → Validación de transiciones
