@@ -27,6 +27,7 @@ class User(SQLModel, table=True):
     email: str = Field(sa_column=Column(String(150), unique=True, nullable=False))
     profile: Optional[str] = Field(default=None, sa_column=Column(String(50)))
     role: Optional[str] = Field(default=None, sa_column=Column(String(50)))
+    hashed_password: str = Field(sa_column=Column(String(255), nullable=False))
     status_id: int = Field(default=1, foreign_key="user_status.id")
     created_at: Optional[datetime] = Field(
         default=None, sa_column=Column(DateTime(timezone=False), server_default=text("CURRENT_TIMESTAMP"))

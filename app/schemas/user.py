@@ -24,6 +24,7 @@ class UserBase(BaseModel):
 
 
 class UserCreate(UserBase):
+    password: str
     status_id: Optional[int] = 1
 
 
@@ -40,3 +41,4 @@ class UserUpdate(BaseModel):
     profile: Optional[str] = None
     role: Optional[str] = None
     status_id: Optional[int] = None
+    password: Optional[str] = None

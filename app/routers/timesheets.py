@@ -6,9 +6,10 @@ from sqlmodel import Session
 
 from app import crud
 from app.core.dependencies import get_session
+from app.core.security import get_current_user
 from app.schemas import TimesheetCreate, TimesheetItemCreate, TimesheetItemRead, TimesheetRead, TimesheetUpdate
 
-router = APIRouter(prefix="/timesheets", tags=["timesheets"])
+router = APIRouter(prefix="/timesheets", tags=["timesheets"], dependencies=[Depends(get_current_user)])
 
 
 @router.post("/", response_model=TimesheetRead, status_code=201)
