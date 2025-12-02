@@ -6,6 +6,7 @@ from app.schemas.account import (
     ProjectRead,
     ProjectUpdate,
 )
+from app.schemas.auth import Token, TokenData
 from app.schemas.timesheet import (
     TimesheetCreate,
     TimesheetItemCreate,
@@ -24,6 +25,8 @@ __all__ = [
     "TimesheetItemRead",
     "TimesheetRead",
     "TimesheetUpdate",
+    "Token",
+    "TokenData",
     "UserCreate",
     "UserRead",
     "UserUpdate",

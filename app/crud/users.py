@@ -23,18 +23,21 @@ def get_by_user_id(session: Session, user_id: str) -> Optional[User]:
     return session.exec(select(User).where(User.user_id == user_id)).first()
 
 
-def create(session: Session, user_in: UserCreate) -> User:
-    user = User(**user_in.model_dump())
+def create(session: Session, user_in: UserCreate, hashed_password: str) -> User:
+    user = User(**user_in.model_dump(exclude={"password"}), hashed_password=hashed_password)
     session.add(user)
     session.commit()
     session.refresh(user)
     return user
 
 
-def update(session: Session, user: User, user_in: UserUpdate) -> User:
+def update(session: Session, user: User, user_in: UserUpdate, hashed_password: str | None = None) -> User:
     update_data = user_in.model_dump(exclude_unset=True)
+    update_data.pop("password", None)
     for field, value in update_data.items():
         setattr(user, field, value)
+    if hashed_password:
+        user.hashed_password = hashed_password
     session.add(user)
     session.commit()
     session.refresh(user)

@@ -32,3 +32,31 @@ def client(engine):
     with TestClient(app) as test_client:
         yield test_client
     app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def user_payload():
+    return {
+        "user_id": "u001",
+        "name": "Test User",
+        "email": "user@example.com",
+        "profile": "tester",
+        "role": "admin",
+        "password": "secret123",
+    }
+
+
+@pytest.fixture
+def auth_token(client, user_payload):
+    client.post("/users/", json=user_payload)
+    response = client.post(
+        "/auth/login",
+        data={"username": user_payload["email"], "password": user_payload["password"]},
+    )
+    assert response.status_code == 200
+    return response.json()["access_token"]
+
+
+@pytest.fixture
+def auth_headers(auth_token):
+    return {"Authorization": f"Bearer {auth_token}"}
