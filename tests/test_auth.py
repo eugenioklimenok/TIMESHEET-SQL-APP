@@ -1,6 +1,6 @@
 
-def test_login_returns_token(client, user_payload):
-    client.post("/users/", json=user_payload)
+def test_login_returns_token(client, create_user, user_payload):
+    create_user(user_payload)
     response = client.post(
         "/auth/login", data={"username": user_payload["email"], "password": user_payload["password"]}
     )
@@ -10,9 +10,9 @@ def test_login_returns_token(client, user_payload):
     assert body["token_type"] == "bearer"
 
 
-def test_auth_me_returns_current_user(client, auth_headers, user_payload):
+def test_auth_me_returns_current_user(client, auth_headers, admin_payload):
     response = client.get("/auth/me", headers=auth_headers)
     assert response.status_code == 200
     body = response.json()
-    assert body["email"] == user_payload["email"]
-    assert body["user_id"] == user_payload["user_id"]
+    assert body["email"] == admin_payload["email"]
+    assert body["user_id"] == admin_payload["user_id"]

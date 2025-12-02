@@ -2,8 +2,11 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import Session, SQLModel, create_engine
 
+from app import crud
 from app.core.dependencies import get_session
+from app.core.security import get_password_hash
 from app.main import app
+from app.schemas import UserCreate
 import app.models  # noqa: F401 - registra metadatos
 
 
@@ -35,20 +38,59 @@ def client(engine):
 
 
 @pytest.fixture
-def user_payload():
+def admin_payload():
     return {
-        "user_id": "u001",
-        "name": "Test User",
-        "email": "user@example.com",
-        "profile": "tester",
+        "user_id": "adm001",
+        "name": "Admin User",
+        "email": "admin@example.com",
+        "profile": "admin", 
         "role": "admin",
         "password": "secret123",
     }
 
 
 @pytest.fixture
-def auth_token(client, user_payload):
-    client.post("/users/", json=user_payload)
+def user_payload():
+    return {
+        "user_id": "u001",
+        "name": "Test User",
+        "email": "user@example.com",
+        "profile": "tester",
+        "role": "user",
+        "password": "secret123",
+    }
+
+
+@pytest.fixture
+def create_user(client, engine):
+    def _create_user(payload: dict):
+        user_in = UserCreate(**payload)
+        hashed = get_password_hash(payload["password"])
+        with Session(engine) as session:
+            return crud.create_user(session, user_in, hashed)
+
+    return _create_user
+
+
+@pytest.fixture
+def auth_token(client, create_user, admin_payload):
+    create_user(admin_payload)
+    response = client.post(
+        "/auth/login",
+        data={"username": admin_payload["email"], "password": admin_payload["password"]},
+    )
+    assert response.status_code == 200
+    return response.json()["access_token"]
+
+
+@pytest.fixture
+def auth_headers(auth_token):
+    return {"Authorization": f"Bearer {auth_token}"}
+
+
+@pytest.fixture
+def user_token(client, create_user, user_payload):
+    create_user(user_payload)
     response = client.post(
         "/auth/login",
         data={"username": user_payload["email"], "password": user_payload["password"]},
@@ -58,5 +100,5 @@ def auth_token(client, user_payload):
 
 
 @pytest.fixture
-def auth_headers(auth_token):
-    return {"Authorization": f"Bearer {auth_token}"}
+def user_headers(user_token):
+    return {"Authorization": f"Bearer {user_token}"}

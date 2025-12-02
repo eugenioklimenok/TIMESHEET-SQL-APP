@@ -6,10 +6,12 @@ from sqlmodel import Session
 
 from app import crud
 from app.core.dependencies import get_session
-from app.core.security import get_current_user, get_password_hash
+from app.core.security import get_password_hash, role_required
 from app.schemas import UserCreate, UserRead, UserUpdate
 
-router = APIRouter(prefix="/users", tags=["users"])
+router = APIRouter(
+    prefix="/users", tags=["users"], dependencies=[Depends(role_required("admin"))]
+)
 
 
 @router.post("/", response_model=UserRead, status_code=201)
@@ -29,16 +31,14 @@ def create_user(user_in: UserCreate, session: Session = Depends(get_session)) ->
 
 @router.get("/", response_model=List[UserRead])
 def list_users(
-    session: Session = Depends(get_session), current_user=Depends(get_current_user)
+    session: Session = Depends(get_session)
 ) -> List[UserRead]:
     users = crud.list_users(session)
     return [UserRead.model_validate(user) for user in users]
 
 
 @router.get("/{user_id}", response_model=UserRead)
-def get_user(
-    user_id: UUID, session: Session = Depends(get_session), current_user=Depends(get_current_user)
-) -> UserRead:
+def get_user(user_id: UUID, session: Session = Depends(get_session)) -> UserRead:
     user = crud.get_user(session, user_id)
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuario no encontrado")
@@ -50,7 +50,6 @@ def update_user(
     user_id: UUID,
     user_in: UserUpdate,
     session: Session = Depends(get_session),
-    current_user=Depends(get_current_user),
 ) -> UserRead:
     user = crud.get_user(session, user_id)
     if not user:
@@ -73,9 +72,7 @@ def update_user(
 
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_user(
-    user_id: UUID, session: Session = Depends(get_session), current_user=Depends(get_current_user)
-) -> None:
+def delete_user(user_id: UUID, session: Session = Depends(get_session)) -> None:
     user = crud.get_user(session, user_id)
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuario no encontrado")
