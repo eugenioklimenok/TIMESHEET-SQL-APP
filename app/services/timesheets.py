@@ -2,12 +2,12 @@ import logging
 from datetime import date
 from uuid import UUID
 
-from fastapi import HTTPException, status
-from fastapi.responses import JSONResponse
+from fastapi import status
 from sqlalchemy import func
 from sqlmodel import Session, select
 
 from app import crud
+from app.core.errors import AuthorizationException, BusinessRuleException, NotFoundException
 from app.models import TimesheetHeader, TimesheetItem, User
 from app.models.timesheet import TimesheetStatus
 from app.schemas import (
@@ -25,14 +25,7 @@ logger = logging.getLogger(__name__)
 
 def _validate_period(period_start, period_end) -> None:
     if period_start and period_end and period_start > period_end:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="El periodo no es válido")
-
-
-def _action_error(status_code: int, message: str) -> JSONResponse:
-    return JSONResponse(
-        status_code=status_code,
-        content={"success": False, "error": {"code": status_code, "message": message}},
-    )
+        raise BusinessRuleException("El periodo no es válido", status_code=status.HTTP_400_BAD_REQUEST)
 
 
 def _build_action_response(timesheet: TimesheetHeader) -> TimesheetActionResponse:
@@ -44,9 +37,9 @@ def _build_action_response(timesheet: TimesheetHeader) -> TimesheetActionRespons
 
 def _ensure_owner_or_admin(timesheet: TimesheetHeader, current_user: User) -> None:
     if current_user.role != "admin" and timesheet.user_id != current_user.id:
-        raise HTTPException(
+        raise AuthorizationException(
+            "Solo el propietario o un admin puede acceder a este parte de horas",
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Solo el propietario o un admin puede acceder a este parte de horas",
         )
 
 
@@ -56,33 +49,30 @@ def _ensure_project_membership(session: Session, project_id: UUID, current_user:
 
     membership = crud.get_membership(session, project_id, current_user.id)
     if not membership:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="No perteneces al proyecto asignado",
-        )
+        raise AuthorizationException("No perteneces al proyecto asignado", status_code=status.HTTP_403_FORBIDDEN)
 
 
 def _ensure_header_modifiable(timesheet: TimesheetHeader) -> None:
     if timesheet.status != TimesheetStatus.DRAFT:
-        raise HTTPException(
+        raise BusinessRuleException(
+            "Solo puedes modificar ítems cuando el parte está en Draft",
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Solo puedes modificar ítems cuando el parte está en Draft",
         )
 
 
 def _ensure_date_in_period(timesheet: TimesheetHeader, item_date: date) -> None:
     if item_date < timesheet.period_start or item_date > timesheet.period_end:
-        raise HTTPException(
+        raise BusinessRuleException(
+            "La fecha del ítem debe estar dentro del período del parte",
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="La fecha del ítem debe estar dentro del período del parte",
         )
 
 
 def _validate_hours_value(hours: float) -> None:
     if hours <= 0 or hours > 24:
-        raise HTTPException(
+        raise BusinessRuleException(
+            "Las horas deben ser mayores a 0 y no exceder 24",
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Las horas deben ser mayores a 0 y no exceder 24",
         )
 
 
@@ -99,9 +89,9 @@ def _validate_daily_total(
 
     current_total = float(session.exec(statement).first() or 0)
     if current_total + hours > 24:
-        raise HTTPException(
+        raise BusinessRuleException(
+            "El total de horas por día no puede exceder 24",
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="El total de horas por día no puede exceder 24",
         )
 
 
@@ -112,9 +102,9 @@ def create_timesheet(session: Session, current_user: User, timesheet_in: Timeshe
         session, current_user.id, timesheet_in.period_start, timesheet_in.period_end
     )
     if overlapping:
-        raise HTTPException(
+        raise BusinessRuleException(
+            "Ya existe un parte de horas para ese periodo",
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Ya existe un parte de horas para ese periodo",
         )
 
     return crud.create_timesheet(session, current_user.id, timesheet_in)
@@ -128,7 +118,7 @@ def list_timesheets(session: Session, current_user: User) -> list[TimesheetHeade
 def get_timesheet(session: Session, timesheet_id: UUID, current_user: User) -> TimesheetHeader:
     timesheet = crud.get_timesheet(session, timesheet_id)
     if not timesheet:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Parte de horas no encontrado")
+        raise NotFoundException("Parte de horas no encontrado")
     _ensure_owner_or_admin(timesheet, current_user)
     return timesheet
 
@@ -139,13 +129,15 @@ def update_timesheet(
     timesheet = get_timesheet(session, timesheet_id, current_user)
 
     if timesheet_in.status is not None:
-        raise HTTPException(
+        raise BusinessRuleException(
+            "Las transiciones de estado deben usar los endpoints dedicados",
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Las transiciones de estado deben usar los endpoints dedicados",
         )
 
     if timesheet.status != TimesheetStatus.DRAFT:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Solo puedes actualizar partes en Draft")
+        raise BusinessRuleException(
+            "Solo puedes actualizar partes en Draft", status_code=status.HTTP_400_BAD_REQUEST
+        )
 
     new_period_start = timesheet_in.period_start or timesheet.period_start
     new_period_end = timesheet_in.period_end or timesheet.period_end
@@ -155,9 +147,9 @@ def update_timesheet(
         session, timesheet.user_id, new_period_start, new_period_end, exclude_id=timesheet.id
     )
     if overlapping:
-        raise HTTPException(
+        raise BusinessRuleException(
+            "El periodo se solapa con otro parte de horas",
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="El periodo se solapa con otro parte de horas",
         )
 
     update_data = timesheet_in.model_dump(exclude_unset=True)
@@ -168,25 +160,28 @@ def update_timesheet(
 def delete_timesheet(session: Session, timesheet_id: UUID, current_user: User) -> None:
     timesheet = get_timesheet(session, timesheet_id, current_user)
     if timesheet.status != TimesheetStatus.DRAFT:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Solo puedes eliminar partes en estado Draft",
+        raise BusinessRuleException(
+            "Solo puedes eliminar partes en estado Draft", status_code=status.HTTP_400_BAD_REQUEST
         )
     crud.delete_timesheet(session, timesheet)
 
 
 def submit_timesheet(
     session: Session, timesheet_id: UUID, current_user: User
-) -> TimesheetActionResponse | JSONResponse:
+) -> TimesheetActionResponse:
     timesheet = crud.get_timesheet(session, timesheet_id)
     if not timesheet:
-        return _action_error(status.HTTP_404_NOT_FOUND, "Parte de horas no encontrado")
+        raise NotFoundException("Parte de horas no encontrado")
 
     if timesheet.user_id != current_user.id:
-        return _action_error(status.HTTP_403_FORBIDDEN, "Solo el dueño puede enviar este parte de horas")
+        raise AuthorizationException(
+            "Solo el dueño puede enviar este parte de horas", status_code=status.HTTP_403_FORBIDDEN
+        )
 
     if timesheet.status != TimesheetStatus.DRAFT:
-        return _action_error(status.HTTP_409_CONFLICT, "Solo los partes en Draft pueden enviarse")
+        raise BusinessRuleException(
+            "Solo los partes en Draft pueden enviarse", status_code=status.HTTP_409_CONFLICT
+        )
 
     updated = crud.update_timesheet(
         session, timesheet, TimesheetUpdate(status=TimesheetStatus.SUBMITTED)
@@ -198,16 +193,20 @@ def submit_timesheet(
 
 def approve_timesheet(
     session: Session, timesheet_id: UUID, current_user: User
-) -> TimesheetActionResponse | JSONResponse:
+) -> TimesheetActionResponse:
     if current_user.role != "admin":
-        return _action_error(status.HTTP_403_FORBIDDEN, "Solo un admin puede aprobar partes de horas")
+        raise AuthorizationException(
+            "Solo un admin puede aprobar partes de horas", status_code=status.HTTP_403_FORBIDDEN
+        )
 
     timesheet = crud.get_timesheet(session, timesheet_id)
     if not timesheet:
-        return _action_error(status.HTTP_404_NOT_FOUND, "Parte de horas no encontrado")
+        raise NotFoundException("Parte de horas no encontrado")
 
     if timesheet.status != TimesheetStatus.SUBMITTED:
-        return _action_error(status.HTTP_409_CONFLICT, "Solo puedes aprobar partes en estado Submitted")
+        raise BusinessRuleException(
+            "Solo puedes aprobar partes en estado Submitted", status_code=status.HTTP_409_CONFLICT
+        )
 
     updated = crud.update_timesheet(
         session, timesheet, TimesheetUpdate(status=TimesheetStatus.APPROVED)
@@ -219,16 +218,20 @@ def approve_timesheet(
 
 def reject_timesheet(
     session: Session, timesheet_id: UUID, current_user: User
-) -> TimesheetActionResponse | JSONResponse:
+) -> TimesheetActionResponse:
     if current_user.role != "admin":
-        return _action_error(status.HTTP_403_FORBIDDEN, "Solo un admin puede rechazar partes de horas")
+        raise AuthorizationException(
+            "Solo un admin puede rechazar partes de horas", status_code=status.HTTP_403_FORBIDDEN
+        )
 
     timesheet = crud.get_timesheet(session, timesheet_id)
     if not timesheet:
-        return _action_error(status.HTTP_404_NOT_FOUND, "Parte de horas no encontrado")
+        raise NotFoundException("Parte de horas no encontrado")
 
     if timesheet.status != TimesheetStatus.SUBMITTED:
-        return _action_error(status.HTTP_409_CONFLICT, "Solo puedes rechazar partes en estado Submitted")
+        raise BusinessRuleException(
+            "Solo puedes rechazar partes en estado Submitted", status_code=status.HTTP_409_CONFLICT
+        )
 
     updated = crud.update_timesheet(
         session, timesheet, TimesheetUpdate(status=TimesheetStatus.REJECTED)
@@ -245,7 +248,7 @@ def create_timesheet_item(
     _ensure_header_modifiable(timesheet)
 
     if not crud.get_project(session, item_in.project_id):
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Proyecto no encontrado")
+        raise NotFoundException("Proyecto no encontrado")
 
     _ensure_project_membership(session, item_in.project_id, current_user)
     _ensure_date_in_period(timesheet, item_in.date)
@@ -267,7 +270,7 @@ def get_timesheet_item(
 
     item = crud.get_item(session, item_id)
     if not item or item.header_id != timesheet.id:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ítem no encontrado")
+        raise NotFoundException("Ítem no encontrado")
 
     return item
 
@@ -280,14 +283,14 @@ def update_timesheet_item(
 
     item = crud.get_item(session, item_id)
     if not item or item.header_id != timesheet.id:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ítem no encontrado")
+        raise NotFoundException("Ítem no encontrado")
 
     new_project_id = item_in.project_id or item.project_id
     new_date = item_in.date or item.date
     new_hours = float(item_in.hours) if item_in.hours is not None else float(item.hours)
 
     if not crud.get_project(session, new_project_id):
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Proyecto no encontrado")
+        raise NotFoundException("Proyecto no encontrado")
 
     _ensure_project_membership(session, new_project_id, current_user)
     _ensure_date_in_period(timesheet, new_date)
@@ -303,6 +306,6 @@ def delete_timesheet_item(session: Session, timesheet_id: UUID, item_id: UUID, c
 
     item = crud.get_item(session, item_id)
     if not item or item.header_id != timesheet.id:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ítem no encontrado")
+        raise NotFoundException("Ítem no encontrado")
 
     crud.delete_item(session, item)

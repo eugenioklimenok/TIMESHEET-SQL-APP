@@ -1,6 +1,8 @@
 from fastapi import FastAPI
 
 from app.core.database import init_db
+from app.core.errors import register_exception_handlers
+from app.utils.logging import setup_logging
 from app.routers import (
     accounts_router,
     auth_router,
@@ -11,11 +13,17 @@ from app.routers import (
     users_router,
 )
 
+# Inicializar logging antes de crear la app
+setup_logging()
+
 app = FastAPI(
     title="TimeSheet App API",
     version="1.0.0",
     description="Backend profesional para gestión de timesheets (FastAPI + SQLModel + PostgreSQL).",
 )
+
+# Registrar manejadores globales
+register_exception_handlers(app)
 
 
 @app.on_event("startup")

@@ -10,12 +10,13 @@ import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlmodel import Session
 
 from app import crud
 from app.core.dependencies import get_session
+from app.core.errors import AuthorizationException
 from app.models import User
 from app.schemas import TokenData
 
@@ -71,21 +72,21 @@ def decode_token(token: str) -> dict:
     try:
         header_b64, payload_b64, signature_b64 = token.split(".")
     except ValueError as exc:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido") from exc
+        raise AuthorizationException("Token inválido") from exc
 
     signing_input = f"{header_b64}.{payload_b64}".encode()
     expected_signature = _sign(signing_input)
     if not hmac.compare_digest(expected_signature, signature_b64):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Firma del token inválida")
+        raise AuthorizationException("Firma del token inválida")
 
     try:
         payload = json.loads(_b64decode(payload_b64))
     except json.JSONDecodeError as exc:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Payload del token inválido") from exc
+        raise AuthorizationException("Payload del token inválido") from exc
 
     exp = payload.get("exp")
     if exp is not None and datetime.fromtimestamp(exp, tz=timezone.utc) < datetime.now(timezone.utc):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token expirado")
+        raise AuthorizationException("Token expirado")
 
     return payload
 
@@ -102,11 +103,7 @@ def authenticate_user(session: Session, email: str, password: str) -> Optional[U
 def get_current_user(
     token: str = Depends(oauth2_scheme), session: Session = Depends(get_session)
 ) -> User:
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="No se pudieron validar las credenciales",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
+    credentials_exception = AuthorizationException("No se pudieron validar las credenciales")
 
     try:
         payload = decode_token(token)
@@ -114,7 +111,7 @@ def get_current_user(
         if subject is None:
             raise credentials_exception
         token_data = TokenData(sub=subject)
-    except HTTPException:
+    except AuthorizationException:
         raise credentials_exception
 
     user = crud.get_by_email(session, token_data.sub)
@@ -128,10 +125,7 @@ def role_required(*allowed_roles: str):
 
     def _require_role(current_user: User = Depends(get_current_user)) -> User:
         if current_user.role not in allowed_roles:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="No tienes permisos suficientes",
-            )
+            raise AuthorizationException("No tienes permisos suficientes", status_code=status.HTTP_403_FORBIDDEN)
         return current_user
 
     return _require_role
