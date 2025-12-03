@@ -2,11 +2,13 @@
 
 ## Fase 1: Saneamiento y consistencia API
 
-| Nº | Tarea | Prioridad | Dependencias | Resultados Esperados | Categoría |
-|----|-------|-----------|--------------|----------------------|-----------|
-| 1 | Unificar el manejo de errores en todos los routers usando las excepciones de `app.core.errors` y el esquema `ErrorResponse`, eliminando `HTTPException` ad-hoc. | Crítica | - | Respuestas coherentes, códigos HTTP alineados y trazabilidad centralizada en logs. | Estándares unificados de errores |
-| 2 | Corregir inconsistencias de identificadores y unicidad en cuentas/proyectos/usuarios (campos `account_id`/`project_id` vs `code`) y validar duplicados a nivel de modelo y CRUD. | Alta | 1 | Datos normalizados sin colisiones y endpoints coherentes con el modelo SQL. | Corrección de inconsistencias detectadas |
-| 3 | Reestructurar routers de usuarios/cuentas/proyectos para delegar reglas en una capa de servicios y reutilizar validaciones comunes. | Alta | 1, 2 | Lógica desacoplada, menor duplicidad y rutas listas para expandir reglas de negocio. | Reestructuración necesaria |
+| Nº | Tarea | Prioridad | Dependencias | Resultados Esperados | Categoría | Estado |
+|----|-------|-----------|--------------|----------------------|-----------|--------|
+| 1 | Unificar el manejo de errores en todos los routers usando las excepciones de `app.core.errors` y el esquema `ErrorResponse`, eliminando `HTTPException` ad-hoc. | Crítica | - | Respuestas coherentes, códigos HTTP alineados y trazabilidad centralizada en logs. | Estándares unificados de errores | **COMPLETADA** |
+| 2 | Corregir inconsistencias de identificadores y unicidad en cuentas/proyectos/usuarios (campos `account_id`/`project_id` vs `code`) y validar duplicados a nivel de modelo y CRUD. | Alta | 1 | Datos normalizados sin colisiones y endpoints coherentes con el modelo SQL. | Corrección de inconsistencias detectadas | Pendiente |
+| 3 | Reestructurar routers de usuarios/cuentas/proyectos para delegar reglas en una capa de servicios y reutilizar validaciones comunes. | Alta | 1, 2 | Lógica desacoplada, menor duplicidad y rutas listas para expandir reglas de negocio. | Reestructuración necesaria | Pendiente |
+
+**Resumen Fase 1 – Tarea 1 (Completada):** Se centralizó el manejo de errores en los routers utilizando las excepciones definidas en `app.core.errors` y el esquema `ErrorResponse`, reemplazando los `HTTPException` ad-hoc para garantizar respuestas coherentes y trazabilidad unificada en logs.
 
 ## Fase 2: Seguridad y configuración profesional
 
