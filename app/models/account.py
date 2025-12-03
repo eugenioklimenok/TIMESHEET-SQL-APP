@@ -7,6 +7,7 @@ from sqlmodel import Field, Relationship, SQLModel
 
 if TYPE_CHECKING:
     from app.models.timesheet import TimesheetHeader
+    from app.models.user import User
 
 
 class Account(SQLModel, table=True):
@@ -21,6 +22,7 @@ class Account(SQLModel, table=True):
     )
 
     projects: List["Project"] = Relationship(back_populates="account")
+    users: List["User"] = Relationship(back_populates="account")
 
 
 class ProjectStatus(SQLModel, table=True):

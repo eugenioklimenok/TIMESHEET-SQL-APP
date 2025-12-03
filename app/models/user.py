@@ -6,7 +6,9 @@ from sqlalchemy import Column, DateTime, String, text
 from sqlmodel import Field, Relationship, SQLModel
 
 if TYPE_CHECKING:
+    from app.models.account import Account
     from app.models.timesheet import TimesheetHeader
+    from app.models.user_profile import UserProfile
 
 
 class UserStatus(SQLModel, table=True):
@@ -26,6 +28,7 @@ class User(SQLModel, table=True):
     name: Optional[str] = Field(default=None, sa_column=Column(String(100)))
     email: str = Field(sa_column=Column(String(150), unique=True, nullable=False))
     profile: Optional[str] = Field(default=None, sa_column=Column(String(50)))
+    account_uuid: Optional[UUID] = Field(default=None, foreign_key="accounts.id")
     role: str = Field(
         default="user",
         sa_column=Column(String(50), nullable=False, server_default=text("'user'")),
@@ -37,5 +40,9 @@ class User(SQLModel, table=True):
     )
 
     status: Optional[UserStatus] = Relationship(back_populates="users")
+    account: Optional["Account"] = Relationship(back_populates="users")
     timesheets: List["TimesheetHeader"] = Relationship(back_populates="user")
+    user_profile: Optional["UserProfile"] = Relationship(
+        back_populates="user", sa_relationship_kwargs={"uselist": False}
+    )
 

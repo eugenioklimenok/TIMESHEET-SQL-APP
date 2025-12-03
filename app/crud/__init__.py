@@ -25,11 +25,14 @@ from app.crud.timesheets import (  # noqa: F401
 )
 from app.crud.users import (  # noqa: F401
     create as create_user,
+    create_profile,
     delete as delete_user,
     get as get_user,
     get_by_email,
     get_by_user_id,
+    get_profile,
     list_all as list_users,
+    update_profile,
     update as update_user,
 )
 
@@ -56,10 +59,13 @@ __all__ = [
     "list_timesheets",
     "update_timesheet",
     "create_user",
+    "create_profile",
     "delete_user",
     "get_user",
     "get_by_email",
     "get_by_user_id",
+    "get_profile",
     "list_users",
+    "update_profile",
     "update_user",
 ]

@@ -19,6 +19,7 @@ class UserBase(BaseModel):
     name: Optional[str] = None
     email: EmailStr
     profile: Optional[str] = None
+    account_uuid: Optional[UUID] = None
     role: Literal["admin", "user"] = "user"
     status_id: Optional[int] = 1
 
@@ -39,6 +40,7 @@ class UserUpdate(BaseModel):
     name: Optional[str] = None
     email: Optional[EmailStr] = None
     profile: Optional[str] = None
+    account_uuid: Optional[UUID] = None
     role: Optional[Literal["admin", "user"]] = None
     status_id: Optional[int] = None
     password: Optional[str] = None
