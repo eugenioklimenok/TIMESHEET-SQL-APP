@@ -13,6 +13,7 @@ from app.schemas.timesheet import (
     TimesheetCreate,
     TimesheetItemCreate,
     TimesheetItemRead,
+    TimesheetItemUpdate,
     TimesheetRead,
     TimesheetUpdate,
 )
@@ -26,6 +27,7 @@ __all__ = [
     "TimesheetCreate",
     "TimesheetItemCreate",
     "TimesheetItemRead",
+    "TimesheetItemUpdate",
     "TimesheetRead",
     "TimesheetUpdate",
     "Token",

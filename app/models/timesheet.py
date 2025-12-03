@@ -3,10 +3,11 @@ from enum import Enum
 from typing import List, Optional, TYPE_CHECKING
 from uuid import UUID, uuid4
 
-from sqlalchemy import Boolean, CheckConstraint, Column, Date, DateTime, Numeric, String, text
+from sqlalchemy import CheckConstraint, Column, Date, DateTime, Numeric, String, text
 from sqlmodel import Field, Relationship, SQLModel
 
 if TYPE_CHECKING:
+    from app.models.account import Project
     from app.models.user import User
 
 
@@ -51,14 +52,26 @@ class TimesheetItem(SQLModel, table=True):
     __tablename__ = "timesheet_item"
 
     id: UUID = Field(default_factory=uuid4, primary_key=True, index=True)
-    header_uuid: UUID = Field(foreign_key="timesheet_header.id")
+    header_id: UUID = Field(foreign_key="timesheet_header.id")
+    project_id: UUID = Field(foreign_key="projects.id")
+    date: date = Field(sa_column=Column(Date, nullable=False))
     description: str = Field(sa_column=Column(String, nullable=False))
     hours: float = Field(sa_column=Column(Numeric(5, 2), nullable=False))
-    billable: Optional[bool] = Field(default=True, sa_column=Column(Boolean, server_default=text("TRUE")))
     created_at: Optional[datetime] = Field(
         default=None, sa_column=Column(DateTime(timezone=False), server_default=text("CURRENT_TIMESTAMP"))
     )
+    updated_at: Optional[datetime] = Field(
+        default=None,
+        sa_column=Column(
+            DateTime(timezone=False),
+            server_default=text("CURRENT_TIMESTAMP"),
+            onupdate=text("CURRENT_TIMESTAMP"),
+        ),
+    )
 
     header: Optional[TimesheetHeader] = Relationship(back_populates="items")
+    project: Optional["Project"] = Relationship()
 
-    __table_args__ = (CheckConstraint("hours >= 0", name="ck_timesheet_item_hours_positive"),)
+    __table_args__ = (
+        CheckConstraint("hours > 0 AND hours <= 24", name="ck_timesheet_item_hours_range"),
+    )
