@@ -34,6 +34,7 @@ from app.crud.timesheets import (  # noqa: F401
     get_timesheet,
     list_items,
     list_timesheets,
+    update_item,
     update_timesheet,
 )
 from app.crud.users import (  # noqa: F401
@@ -81,6 +82,7 @@ __all__ = [
     "get_timesheet",
     "list_items",
     "list_timesheets",
+    "update_item",
     "update_timesheet",
     "create_user",
     "create_profile",

@@ -4,12 +4,18 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, status
 from sqlmodel import Session
 
-from app import crud
 from app.core.dependencies import get_session
 from app.core.security import role_required
 from app.models import User
 from app.services import timesheets as timesheet_service
-from app.schemas import TimesheetCreate, TimesheetItemCreate, TimesheetItemRead, TimesheetRead, TimesheetUpdate
+from app.schemas import (
+    TimesheetCreate,
+    TimesheetItemCreate,
+    TimesheetItemRead,
+    TimesheetItemUpdate,
+    TimesheetRead,
+    TimesheetUpdate,
+)
 
 router = APIRouter(
     prefix="/timesheets",
@@ -65,24 +71,55 @@ def delete_timesheet(
     timesheet_service.delete_timesheet(session, timesheet_id, current_user)
 
 
-@router.post("/{timesheet_id}/items", response_model=TimesheetItemRead, status_code=status.HTTP_201_CREATED)
+@router.post("/{header_id}/items", response_model=TimesheetItemRead, status_code=status.HTTP_201_CREATED)
 def create_timesheet_item(
-    timesheet_id: UUID,
+    header_id: UUID,
     item_in: TimesheetItemCreate,
     session: Session = Depends(get_session),
     current_user: User = Depends(role_required("admin", "user")),
 ) -> TimesheetItemRead:
-    timesheet_service.get_timesheet(session, timesheet_id, current_user)
-    item = crud.create_item(session, timesheet_id, item_in)
+    item = timesheet_service.create_timesheet_item(session, header_id, item_in, current_user)
     return TimesheetItemRead.model_validate(item)
 
 
-@router.get("/{timesheet_id}/items", response_model=List[TimesheetItemRead])
+@router.get("/{header_id}/items", response_model=List[TimesheetItemRead])
 def list_timesheet_items(
-    timesheet_id: UUID,
+    header_id: UUID,
     session: Session = Depends(get_session),
     current_user: User = Depends(role_required("admin", "user")),
 ) -> List[TimesheetItemRead]:
-    timesheet_service.get_timesheet(session, timesheet_id, current_user)
-    items = crud.list_items(session, header_uuid=timesheet_id)
+    items = timesheet_service.list_timesheet_items(session, header_id, current_user)
     return [TimesheetItemRead.model_validate(item) for item in items]
+
+
+@router.get("/{header_id}/items/{item_id}", response_model=TimesheetItemRead)
+def get_timesheet_item(
+    header_id: UUID,
+    item_id: UUID,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(role_required("admin", "user")),
+) -> TimesheetItemRead:
+    item = timesheet_service.get_timesheet_item(session, header_id, item_id, current_user)
+    return TimesheetItemRead.model_validate(item)
+
+
+@router.put("/{header_id}/items/{item_id}", response_model=TimesheetItemRead)
+def update_timesheet_item(
+    header_id: UUID,
+    item_id: UUID,
+    item_in: TimesheetItemUpdate,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(role_required("admin", "user")),
+) -> TimesheetItemRead:
+    item = timesheet_service.update_timesheet_item(session, header_id, item_id, item_in, current_user)
+    return TimesheetItemRead.model_validate(item)
+
+
+@router.delete("/{header_id}/items/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_timesheet_item(
+    header_id: UUID,
+    item_id: UUID,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(role_required("admin", "user")),
+) -> None:
+    timesheet_service.delete_timesheet_item(session, header_id, item_id, current_user)
