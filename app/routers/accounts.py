@@ -7,7 +7,7 @@ from sqlmodel import Session
 from app import crud
 from app.core.dependencies import get_session
 from app.core.security import role_required
-from app.schemas import AccountCreate, AccountRead, AccountUpdate, ProjectCreate, ProjectRead, ProjectUpdate
+from app.schemas.account import AccountCreate, AccountRead, AccountUpdate, ProjectCreate, ProjectRead, ProjectUpdate
 
 router = APIRouter(
     prefix="/accounts",

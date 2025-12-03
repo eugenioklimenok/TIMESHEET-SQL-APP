@@ -4,7 +4,7 @@ from uuid import UUID
 from sqlmodel import Session, select
 
 from app.models import Account, Project
-from app.schemas import AccountCreate, AccountUpdate, ProjectCreate, ProjectUpdate
+from app.schemas.account import AccountCreate, AccountUpdate, ProjectCreate, ProjectUpdate
 
 
 # Account operations
@@ -59,7 +59,9 @@ def get_by_project_id(session: Session, project_id: str) -> Optional[Project]:
 
 
 def create_project(session: Session, project_in: ProjectCreate) -> Project:
-    project = Project(**project_in.model_dump())
+    project_data = project_in.model_dump()
+    project_data["code"] = project_in.project_id
+    project = Project(**project_data)
     session.add(project)
     session.commit()
     session.refresh(project)
@@ -68,6 +70,8 @@ def create_project(session: Session, project_in: ProjectCreate) -> Project:
 
 def update_project(session: Session, project: Project, project_in: ProjectUpdate) -> Project:
     update_data = project_in.model_dump(exclude_unset=True)
+    if "project_id" in update_data:
+        update_data["code"] = update_data.get("project_id")
     for field, value in update_data.items():
         setattr(project, field, value)
     session.add(project)

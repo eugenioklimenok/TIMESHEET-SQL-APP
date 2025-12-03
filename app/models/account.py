@@ -2,8 +2,10 @@ from datetime import datetime
 from typing import List, Optional, TYPE_CHECKING
 from uuid import UUID, uuid4
 
-from sqlalchemy import Column, DateTime, String, Text, text
+from sqlalchemy import Boolean, Column, DateTime, String, Text, text
 from sqlmodel import Field, Relationship, SQLModel
+
+from app.models.project_membership import UserProjectMembership
 
 if TYPE_CHECKING:
     from app.models.timesheet import TimesheetHeader
@@ -39,15 +41,32 @@ class Project(SQLModel, table=True):
 
     id: UUID = Field(default_factory=uuid4, primary_key=True, index=True)
     project_id: str = Field(sa_column=Column(String(25), unique=True, nullable=False, index=True))
+    code: str = Field(sa_column=Column(String(16), unique=True, nullable=False, index=True))
     name: str = Field(sa_column=Column(String(100), nullable=False))
     account_uuid: Optional[UUID] = Field(default=None, foreign_key="accounts.id")
     status_id: Optional[int] = Field(default=1, foreign_key="project_status.id")
     description: Optional[str] = Field(default=None, sa_column=Column(Text))
+    client_name: Optional[str] = Field(default=None, sa_column=Column(String(150)))
+    is_active: bool = Field(
+        default=True,
+        sa_column=Column(Boolean, nullable=False, server_default=text("TRUE")),
+    )
     created_at: Optional[datetime] = Field(
-        default=None, sa_column=Column(DateTime(timezone=False), server_default=text("CURRENT_TIMESTAMP"))
+        default=None,
+        sa_column=Column(DateTime(timezone=True), server_default=text("CURRENT_TIMESTAMP")),
+    )
+    updated_at: Optional[datetime] = Field(
+        default=None,
+        sa_column=Column(
+            DateTime(timezone=True),
+            server_default=text("CURRENT_TIMESTAMP"),
+            onupdate=text("CURRENT_TIMESTAMP"),
+        ),
     )
 
     account: Optional[Account] = Relationship(back_populates="projects")
     status: Optional[ProjectStatus] = Relationship(back_populates="projects")
     timesheets: List["TimesheetHeader"] = Relationship(back_populates="project")
+    memberships: List["UserProjectMembership"] = Relationship(back_populates="project")
+    members: List["User"] = Relationship(back_populates="projects", link_model=UserProjectMembership)
 
