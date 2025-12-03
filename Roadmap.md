@@ -39,7 +39,7 @@ Añadir reglas de negocio y mejoras de datos.
 
 | ID  | Título                               | Descripción técnica                                                             | Dependencias |
 |-----|--------------------------------------|---------------------------------------------------------------------------------|--------------|
-| T5  | Validaciones de dominio              | Chequear unicidad de IDs combinados, límites de horas (>0 y <=24/día), fechas no futuras. | T1 (cumplida), T3       |
+| T5  | Validaciones de dominio (COMPLETADA) | Chequear unicidad de IDs combinados, límites de horas (>0 y <=24/día), fechas no futuras. | T1 (cumplida), T3       |
 | T6  | Filtrado y paginación de listados    | Añadir query params por cuenta/proyecto/usuario/estado/fecha y paginación estándar. | T1 (cumplida)           |
 | T7  | Relaciones y preload eficientes      | Incluir `joinload`/`selectinload` en queries para evitar N+1 y exponer anidados en schemas. | T6           |
 
@@ -57,7 +57,7 @@ Fortalecer pruebas, observabilidad y despliegue.
 2. T2 (completada) → Modelo de roles y permisos
 3. T3 (completada) → Gestión de estados iniciales
 4. T4 (completada) → Validación de transiciones
-5. T5 → Validaciones de dominio
+5. T5 (completada) → Validaciones de dominio
 6. T6 → Filtrado y paginación de listados
 7. T7 → Relaciones y preload eficientes
 8. T8 → Pruebas automatizadas
