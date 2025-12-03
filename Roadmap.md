@@ -41,7 +41,7 @@ Añadir reglas de negocio y mejoras de datos.
 |-----|--------------------------------------|---------------------------------------------------------------------------------|--------------|
 | T5  | Validaciones de dominio (COMPLETADA) | Chequear unicidad de IDs combinados, límites de horas (>0 y <=24/día), fechas no futuras. | T1 (cumplida), T3       |
 | T6  | Filtrado y paginación de listados (COMPLETADA)   | Añadir query params por cuenta/proyecto/usuario/estado/fecha y paginación estándar. | T1 (cumplida)           |
-| T7  | Relaciones y preload eficientes      | Incluir `joinload`/`selectinload` en queries para evitar N+1 y exponer anidados en schemas. | T6           |
+| T7  | Relaciones y preload eficientes (COMPLETADA)     | Incluir `joinload`/`selectinload` en queries para evitar N+1 y exponer anidados en schemas. | T6 (cumplida)           |
 
 ### Fase 3: Calidad y entrega
 Fortalecer pruebas, observabilidad y despliegue.
@@ -59,7 +59,7 @@ Fortalecer pruebas, observabilidad y despliegue.
 4. T4 (completada) → Validación de transiciones
 5. T5 (completada) → Validaciones de dominio
 6. T6 (completada) → Filtrado y paginación de listados
-7. T7 → Relaciones y preload eficientes
+7. T7 (completada) → Relaciones y preload eficientes
 8. T8 → Pruebas automatizadas
 9. T9 → Documentación y ejemplos de API
 10. T10 → Contenedorización y CI
