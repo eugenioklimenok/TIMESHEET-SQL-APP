@@ -1,24 +1,42 @@
+from datetime import date
 from typing import List, Optional
 from uuid import UUID
 
 from sqlmodel import Session, select
 
 from app.models import TimesheetHeader, TimesheetItem
+from app.models.timesheet import TimesheetStatus
 from app.schemas import TimesheetCreate, TimesheetItemCreate, TimesheetUpdate
 
 
 # Timesheet headers
 
-def list_timesheets(session: Session) -> List[TimesheetHeader]:
-    return list(session.exec(select(TimesheetHeader)))
+def list_timesheets(session: Session, user_id: Optional[UUID] = None) -> List[TimesheetHeader]:
+    statement = select(TimesheetHeader)
+    if user_id:
+        statement = statement.where(TimesheetHeader.user_id == user_id)
+    return list(session.exec(statement))
 
 
 def get_timesheet(session: Session, timesheet_id: UUID) -> Optional[TimesheetHeader]:
     return session.get(TimesheetHeader, timesheet_id)
 
 
-def create_timesheet(session: Session, timesheet_in: TimesheetCreate) -> TimesheetHeader:
-    timesheet = TimesheetHeader(**timesheet_in.model_dump())
+def find_overlapping_timesheet(
+    session: Session, user_id: UUID, period_start: date, period_end: date, exclude_id: Optional[UUID] = None
+) -> Optional[TimesheetHeader]:
+    statement = select(TimesheetHeader).where(
+        TimesheetHeader.user_id == user_id,
+        TimesheetHeader.period_start <= period_end,
+        TimesheetHeader.period_end >= period_start,
+    )
+    if exclude_id:
+        statement = statement.where(TimesheetHeader.id != exclude_id)
+    return session.exec(statement).first()
+
+
+def create_timesheet(session: Session, user_id: UUID, timesheet_in: TimesheetCreate) -> TimesheetHeader:
+    timesheet = TimesheetHeader(user_id=user_id, status=TimesheetStatus.DRAFT, **timesheet_in.model_dump())
     session.add(timesheet)
     session.commit()
     session.refresh(timesheet)
