@@ -24,6 +24,12 @@ from app.crud.projects import (  # noqa: F401
     remove_member,
     update_project as update_project_v2,
 )
+from app.crud.reports import (  # noqa: F401
+    aggregate_hours_by_project,
+    aggregate_hours_by_user,
+    aggregate_user_projects,
+    summarize_hours_by_status,
+)
 from app.crud.timesheets import (  # noqa: F401
     create_item,
     create_timesheet,
@@ -73,6 +79,10 @@ __all__ = [
     "list_projects_v2",
     "remove_member",
     "update_project_v2",
+    "aggregate_hours_by_project",
+    "aggregate_hours_by_user",
+    "aggregate_user_projects",
+    "summarize_hours_by_status",
     "create_item",
     "create_timesheet",
     "delete_item",

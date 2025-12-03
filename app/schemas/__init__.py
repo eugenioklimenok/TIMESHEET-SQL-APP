@@ -19,6 +19,13 @@ from app.schemas.timesheet import (
     TimesheetRead,
     TimesheetUpdate,
 )
+from app.schemas.report import (
+    ProjectHoursReport,
+    StatusSummary,
+    SummaryReport,
+    UserHoursReport,
+    UserProjectHoursReport,
+)
 from app.schemas.user import UserCreate, UserRead, UserUpdate
 from app.schemas.user_profile import UserProfileRead, UserProfileUpdate
 
@@ -34,6 +41,11 @@ __all__ = [
     "TimesheetActionResponse",
     "TimesheetRead",
     "TimesheetUpdate",
+    "ProjectHoursReport",
+    "StatusSummary",
+    "SummaryReport",
+    "UserHoursReport",
+    "UserProjectHoursReport",
     "Token",
     "TokenData",
     "UserCreate",

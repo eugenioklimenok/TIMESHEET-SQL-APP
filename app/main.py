@@ -6,6 +6,7 @@ from app.routers import (
     auth_router,
     profile_router,
     projects_router,
+    reports_router,
     timesheets_router,
     users_router,
 )
@@ -33,4 +34,5 @@ app.include_router(auth_router)
 app.include_router(profile_router)
 app.include_router(accounts_router)
 app.include_router(projects_router)
+app.include_router(reports_router)
 app.include_router(timesheets_router)
