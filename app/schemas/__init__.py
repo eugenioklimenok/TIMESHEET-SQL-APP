@@ -15,6 +15,7 @@ from app.schemas.timesheet import (
     TimesheetUpdate,
 )
 from app.schemas.user import UserCreate, UserRead, UserUpdate
+from app.schemas.user_profile import UserProfileRead, UserProfileUpdate
 
 __all__ = [
     "AccountCreate",
@@ -30,6 +31,8 @@ __all__ = [
     "UserCreate",
     "UserRead",
     "UserUpdate",
+    "UserProfileRead",
+    "UserProfileUpdate",
     "ProjectCreate",
     "ProjectRead",
     "ProjectUpdate",
