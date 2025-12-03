@@ -8,7 +8,6 @@ from sqlmodel import Field, Relationship, SQLModel
 from app.models.project_membership import UserProjectMembership
 
 if TYPE_CHECKING:
-    from app.models.timesheet import TimesheetHeader
     from app.models.user import User
 
 
@@ -66,7 +65,6 @@ class Project(SQLModel, table=True):
 
     account: Optional[Account] = Relationship(back_populates="projects")
     status: Optional[ProjectStatus] = Relationship(back_populates="projects")
-    timesheets: List["TimesheetHeader"] = Relationship(back_populates="project")
     memberships: List["UserProjectMembership"] = Relationship(back_populates="project")
     members: List["User"] = Relationship(back_populates="projects", link_model=UserProjectMembership)
 
