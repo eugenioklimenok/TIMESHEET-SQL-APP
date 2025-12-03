@@ -1,3 +1,3 @@
-from app.services import timesheets
+from app.services import reports, timesheets
 
-__all__ = ["timesheets"]
+__all__ = ["timesheets", "reports"]
