@@ -49,7 +49,7 @@ Fortalecer pruebas, observabilidad y despliegue.
 | ID  | Título                               | Descripción técnica                                                             | Dependencias |
 |-----|--------------------------------------|---------------------------------------------------------------------------------|--------------|
 | T8  | Pruebas automatizadas (COMPLETADA)   | Tests unitarios/integ. para CRUD/routers con SQLite en memoria y fixtures de datos. | T5, T6 (cumplidas) |
-| T9  | Documentación y ejemplos de API      | Actualizar README/Swagger con flujos, auth y ejemplos curl/httpie.               | T1 (cumplida), T6       |
+| T9  | Documentación y ejemplos de API (COMPLETADA) | Actualizar README/Swagger con flujos, auth y ejemplos curl/httpie.               | T1 (cumplida), T6       |
 | T10 | Contenedorización y CI               | Revisar Docker/compose, agregar pipeline (lint+tests+migrations) en CI.          | T8, T9       |
 
 ## 4. Orden Recomendado
@@ -61,5 +61,5 @@ Fortalecer pruebas, observabilidad y despliegue.
 6. T6 (completada) → Filtrado y paginación de listados
 7. T7 (completada) → Relaciones y preload eficientes
 8. T8 (completada) → Pruebas automatizadas
-9. T9 → Documentación y ejemplos de API
+9. T9 (completada) → Documentación y ejemplos de API
 10. T10 → Contenedorización y CI
