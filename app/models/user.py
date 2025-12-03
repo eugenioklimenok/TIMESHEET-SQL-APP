@@ -5,8 +5,10 @@ from uuid import UUID, uuid4
 from sqlalchemy import Column, DateTime, String, text
 from sqlmodel import Field, Relationship, SQLModel
 
+from app.models.project_membership import UserProjectMembership
+
 if TYPE_CHECKING:
-    from app.models.account import Account
+    from app.models.account import Account, Project
     from app.models.timesheet import TimesheetHeader
     from app.models.user_profile import UserProfile
 
@@ -45,4 +47,6 @@ class User(SQLModel, table=True):
     user_profile: Optional["UserProfile"] = Relationship(
         back_populates="user", sa_relationship_kwargs={"uselist": False}
     )
+    project_memberships: List["UserProjectMembership"] = Relationship(back_populates="user")
+    projects: List["Project"] = Relationship(back_populates="members", link_model=UserProjectMembership)
 
