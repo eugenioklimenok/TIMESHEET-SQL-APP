@@ -26,6 +26,7 @@ from app.schemas.report import (
     UserHoursReport,
     UserProjectHoursReport,
 )
+from app.schemas.validation import DateRange, ErrorResponse
 from app.schemas.user import UserCreate, UserRead, UserUpdate
 from app.schemas.user_profile import UserProfileRead, UserProfileUpdate
 
@@ -60,4 +61,6 @@ __all__ = [
     "ProjectMemberCreate",
     "ProjectMemberRead",
     "ProjectMemberList",
+    "DateRange",
+    "ErrorResponse",
 ]

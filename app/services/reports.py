@@ -1,10 +1,11 @@
 from datetime import date
 from uuid import UUID
 
-from fastapi import HTTPException, status
+from fastapi import status
 from sqlmodel import Session
 
 from app import crud
+from app.core.errors import AuthorizationException, BusinessRuleException, NotFoundException
 from app.models import User
 from app.models.timesheet import TimesheetStatus
 from app.schemas import (
@@ -16,31 +17,27 @@ from app.schemas import (
 )
 
 
-def _raise_error(status_code: int, detail: str, code: str) -> None:
-    raise HTTPException(status_code=status_code, detail={"detail": detail, "code": code})
-
-
 def _validate_period(period_start: date, period_end: date) -> None:
     if period_start > period_end:
-        _raise_error(status.HTTP_400_BAD_REQUEST, "El rango de fechas no es válido", "invalid_parameters")
+        raise BusinessRuleException("El rango de fechas no es válido", status_code=status.HTTP_400_BAD_REQUEST)
 
 
 def _ensure_admin_or_self(target_user_id: UUID, current_user: User) -> None:
     if current_user.role != "admin" and current_user.id != target_user_id:
-        _raise_error(status.HTTP_403_FORBIDDEN, "No tienes permiso para ver estos datos", "permission_denied")
+        raise AuthorizationException("No tienes permiso para ver estos datos", status_code=status.HTTP_403_FORBIDDEN)
 
 
 def _ensure_project_access(session: Session, project_id: UUID, current_user: User) -> None:
     project = crud.get_project_v2(session, project_id)
     if not project:
-        _raise_error(status.HTTP_404_NOT_FOUND, "Proyecto no encontrado", "not_found")
+        raise NotFoundException("Proyecto no encontrado")
 
     if current_user.role == "admin":
         return
 
     membership = crud.get_membership(session, project_id, current_user.id)
     if not membership:
-        _raise_error(status.HTTP_403_FORBIDDEN, "No perteneces a este proyecto", "permission_denied")
+        raise AuthorizationException("No perteneces a este proyecto", status_code=status.HTTP_403_FORBIDDEN)
 
 
 def get_user_hours_report(
@@ -52,7 +49,7 @@ def get_user_hours_report(
     rows = crud.aggregate_hours_by_user(session, period_start, period_end, user_filter)
 
     if not rows:
-        _raise_error(status.HTTP_404_NOT_FOUND, "No se encontraron horas en el período indicado", "not_found")
+        raise NotFoundException("No se encontraron horas en el período indicado")
 
     return [
         UserHoursReport(
@@ -76,7 +73,7 @@ def get_project_hours_report(
     rows = crud.aggregate_hours_by_project(session, project_id, period_start, period_end, user_filter)
 
     if not rows:
-        _raise_error(status.HTTP_404_NOT_FOUND, "No se encontraron horas para este proyecto", "not_found")
+        raise NotFoundException("No se encontraron horas para este proyecto")
 
     return [
         ProjectHoursReport(
@@ -98,11 +95,11 @@ def get_user_projects_report(
 
     user = crud.get_user(session, target_user_id)
     if not user:
-        _raise_error(status.HTTP_404_NOT_FOUND, "Usuario no encontrado", "not_found")
+        raise NotFoundException("Usuario no encontrado")
 
     rows = crud.aggregate_user_projects(session, target_user_id, period_start, period_end)
     if not rows:
-        _raise_error(status.HTTP_404_NOT_FOUND, "No se encontraron horas para este usuario", "not_found")
+        raise NotFoundException("No se encontraron horas para este usuario")
 
     return [
         UserProjectHoursReport(
@@ -123,11 +120,13 @@ def get_status_summary(
     _validate_period(period_start, period_end)
 
     if current_user.role != "admin":
-        _raise_error(status.HTTP_403_FORBIDDEN, "Solo los administradores pueden ver el resumen", "permission_denied")
+        raise AuthorizationException(
+            "Solo los administradores pueden ver el resumen", status_code=status.HTTP_403_FORBIDDEN
+        )
 
     rows = crud.summarize_hours_by_status(session, period_start, period_end)
     if not rows:
-        _raise_error(status.HTTP_404_NOT_FOUND, "No hay datos para este período", "not_found")
+        raise NotFoundException("No hay datos para este período")
 
     totals_map = {row.status: float(row.total_hours or 0) for row in rows}
     ordered_statuses = [TimesheetStatus.DRAFT, TimesheetStatus.SUBMITTED, TimesheetStatus.APPROVED]
