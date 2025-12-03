@@ -13,6 +13,7 @@ from app.schemas import (
     TimesheetItemCreate,
     TimesheetItemRead,
     TimesheetItemUpdate,
+    TimesheetActionResponse,
     TimesheetRead,
     TimesheetUpdate,
 )
@@ -69,6 +70,33 @@ def delete_timesheet(
     current_user: User = Depends(role_required("admin", "user")),
 ) -> None:
     timesheet_service.delete_timesheet(session, timesheet_id, current_user)
+
+
+@router.post("/{timesheet_id}/submit", response_model=TimesheetActionResponse)
+def submit_timesheet(
+    timesheet_id: UUID,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(role_required("admin", "user")),
+) -> TimesheetActionResponse:
+    return timesheet_service.submit_timesheet(session, timesheet_id, current_user)
+
+
+@router.post("/{timesheet_id}/approve", response_model=TimesheetActionResponse)
+def approve_timesheet(
+    timesheet_id: UUID,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(role_required("admin")),
+) -> TimesheetActionResponse:
+    return timesheet_service.approve_timesheet(session, timesheet_id, current_user)
+
+
+@router.post("/{timesheet_id}/reject", response_model=TimesheetActionResponse)
+def reject_timesheet(
+    timesheet_id: UUID,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(role_required("admin")),
+) -> TimesheetActionResponse:
+    return timesheet_service.reject_timesheet(session, timesheet_id, current_user)
 
 
 @router.post("/{header_id}/items", response_model=TimesheetItemRead, status_code=status.HTTP_201_CREATED)

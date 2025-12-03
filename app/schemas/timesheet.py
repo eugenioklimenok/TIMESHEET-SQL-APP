@@ -2,7 +2,7 @@ from datetime import date, datetime
 from typing import Optional
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.models.timesheet import TimesheetStatus
 
@@ -59,3 +59,21 @@ class TimesheetUpdate(BaseModel):
     period_start: Optional[date] = None
     period_end: Optional[date] = None
     status: Optional[TimesheetStatus] = None
+
+
+class TimesheetDetail(BaseModel):
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+
+    id: UUID
+    owner: UUID = Field(alias="user_id")
+    status: TimesheetStatus
+    period_start: date
+    period_end: date
+    items: list[TimesheetItemRead] = Field(default_factory=list)
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+
+class TimesheetActionResponse(BaseModel):
+    success: bool
+    timesheet: TimesheetDetail
