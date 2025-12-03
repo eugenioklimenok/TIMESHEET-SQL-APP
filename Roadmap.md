@@ -1,65 +1,30 @@
-# Roadmap Timesheet-SQL-APP
+# Roadmap del Proyecto
 
-## Checklist inicial
-- [ ] Registrar estado actual del backend FastAPI/SQLModel
-- [ ] Identificar brechas funcionales pendientes
-- [ ] Planificar fases técnicas con dependencias claras
-- [ ] Priorizar tareas críticas para operatividad
-- [ ] Establecer secuencia recomendada de ejecución
+## Fase 1: Saneamiento y consistencia API
 
-## 1. Resumen de Implementación Actual
-- API FastAPI con routers para usuarios, cuentas/proyectos y timesheets montados en `app/main.py`.
-- Modelos SQLModel para usuarios, cuentas, proyectos, estados y timesheets con relaciones y validaciones básicas.
-- CRUD sin capas de servicio: operaciones directas para crear/listar/actualizar/eliminar usuarios, cuentas, proyectos, cabeceras e ítems de timesheet.
-- Esquemas Pydantic v2 para entrada/salida en usuarios, cuentas/proyectos y timesheets.
-- Inicialización de base con `init_db()` y dependencia `get_session()` centralizada para sesiones SQLModel.
-- T1 (Autenticación JWT básica) ya está implementada en el repositorio: login con emisión/validación de tokens, hashing de contraseñas y dependencias de seguridad activas en los routers.
+| Nº | Tarea | Prioridad | Dependencias | Resultados Esperados | Categoría |
+|----|-------|-----------|--------------|----------------------|-----------|
+| 1 | Unificar el manejo de errores en todos los routers usando las excepciones de `app.core.errors` y el esquema `ErrorResponse`, eliminando `HTTPException` ad-hoc. | Crítica | - | Respuestas coherentes, códigos HTTP alineados y trazabilidad centralizada en logs. | Estándares unificados de errores |
+| 2 | Corregir inconsistencias de identificadores y unicidad en cuentas/proyectos/usuarios (campos `account_id`/`project_id` vs `code`) y validar duplicados a nivel de modelo y CRUD. | Alta | 1 | Datos normalizados sin colisiones y endpoints coherentes con el modelo SQL. | Corrección de inconsistencias detectadas |
+| 3 | Reestructurar routers de usuarios/cuentas/proyectos para delegar reglas en una capa de servicios y reutilizar validaciones comunes. | Alta | 1, 2 | Lógica desacoplada, menor duplicidad y rutas listas para expandir reglas de negocio. | Reestructuración necesaria |
 
-## 2. Faltantes del Backend
-- Validaciones de negocio (cruces de estados, unicidad avanzada, rangos de horas, fechas futuras) y manejo de errores consistentes.
-- Filtrados y paginación en listados; búsqueda por parámetros (cuenta, proyecto, rango de fechas, estado, usuario).
-- Gestión de estados y flujo de timesheets (transiciones Draft/Submitted/Approved y acciones asociadas).
-- Tests automatizados de routers/CRUD y configuración de CI para ejecutarlos.
-- Documentación operacional (env vars, ejemplos de requests, swagger custom) y scripts de arranque (Docker/compose actualizados).
+## Fase 2: Seguridad y configuración profesional
 
-## 3. Roadmap en Fases
+| Nº | Tarea | Prioridad | Dependencias | Resultados Esperados | Categoría |
+|----|-------|-----------|--------------|----------------------|-----------|
+| 4 | Implementar seguridad JWT profesional con PyJWT y passlib: firmas HS256/RS256 configurables por entorno, expiración, refresh tokens y revocación básica. | Crítica | 1, 3 | Autenticación robusta, claves rotables y tokens alineados a mejores prácticas. | Seguridad JWT profesional |
+| 5 | Crear configuración profesional con `pydantic-settings`, `.env.example`, perfiles dev/test/prod y contenedores Docker/Compose para API + PostgreSQL + healthchecks. | Alta | 4 | Despliegues reproducibles, variables centralizadas y arranque local/CI consistente. | Configuración profesional (Docker, settings, etc.) |
 
-### Fase 1: Fundamentos operativos
-Asegurar autenticación, seguridad y control de estados mínimos.
+## Fase 3: Reglas de negocio y experiencia de datos
 
-| ID  | Título                         | Descripción técnica                                                                 | Dependencias |
-|-----|--------------------------------|-------------------------------------------------------------------------------------|--------------|
-| T1  | Autenticación JWT básica (COMPLETADA) | Implementar login con emisión/validación de tokens, hashing de contraseñas y guardas de ruta. Implementado en el repositorio. | —            |
-| T2  | Modelo de roles y permisos (COMPLETADA) | Definir roles (admin/user) y dependencias de autorización en routers sensibles.     | T1 (cumplida) |
-| T3  | Gestión de estados iniciales (COMPLETADA)  | CRUD para tablas de estado (`user_status`, `project_status`, `timesheet_status`) y valores seed. | —            |
-| T4  | Validación de transiciones (COMPLETADA)    | Reglas para mover timesheets entre estados permitidos (draft→submitted→approved) con errores claros. | T3 (cumplida) |
+| Nº | Tarea | Prioridad | Dependencias | Resultados Esperados | Categoría |
+|----|-------|-----------|--------------|----------------------|-----------|
+| 6 | Completar validaciones de negocio de timesheets: solapes de periodos, horas diarias y pertenencia a proyectos, con transiciones Draft/Submitted/Approved/Rejected cerradas. | Crítica | 1, 3 | Reglas consistentes, mensajes claros y prevención de registros inválidos. | Validaciones de negocio faltantes |
+| 7 | Aplicar paginación y filtros coherentes en listados de usuarios, cuentas, proyectos, timesheets y reportes (fecha, estado, cuenta, proyecto, usuario). | Alta | 1, 6 | Consultas predecibles, escalabilidad en listados y contratos de API documentados. | Paginación y filtros coherentes en todos los listados |
 
-### Fase 2: Funcionalidad core
-Añadir reglas de negocio y mejoras de datos.
+## Fase 4: Calidad, pruebas y entrega
 
-| ID  | Título                               | Descripción técnica                                                             | Dependencias |
-|-----|--------------------------------------|---------------------------------------------------------------------------------|--------------|
-| T5  | Validaciones de dominio (COMPLETADA) | Chequear unicidad de IDs combinados, límites de horas (>0 y <=24/día), fechas no futuras. | T1 (cumplida), T3       |
-| T6  | Filtrado y paginación de listados (COMPLETADA)   | Añadir query params por cuenta/proyecto/usuario/estado/fecha y paginación estándar. | T1 (cumplida)           |
-| T7  | Relaciones y preload eficientes (COMPLETADA)     | Incluir `joinload`/`selectinload` en queries para evitar N+1 y exponer anidados en schemas. | T6 (cumplida)           |
-
-### Fase 3: Calidad y entrega
-Fortalecer pruebas, observabilidad y despliegue.
-
-| ID  | Título                               | Descripción técnica                                                             | Dependencias |
-|-----|--------------------------------------|---------------------------------------------------------------------------------|--------------|
-| T8  | Pruebas automatizadas (COMPLETADA)   | Tests unitarios/integ. para CRUD/routers con SQLite en memoria y fixtures de datos. | T5, T6 (cumplidas) |
-| T9  | Documentación y ejemplos de API (COMPLETADA) | Actualizar README/Swagger con flujos, auth y ejemplos curl/httpie.               | T1 (cumplida), T6       |
-| T10 | Contenedorización y CI               | Revisar Docker/compose, agregar pipeline (lint+tests+migrations) en CI.          | T8, T9       |
-
-## 4. Orden Recomendado
-1. T1 (completada) → Autenticación JWT básica
-2. T2 (completada) → Modelo de roles y permisos
-3. T3 (completada) → Gestión de estados iniciales
-4. T4 (completada) → Validación de transiciones
-5. T5 (completada) → Validaciones de dominio
-6. T6 (completada) → Filtrado y paginación de listados
-7. T7 (completada) → Relaciones y preload eficientes
-8. T8 (completada) → Pruebas automatizadas
-9. T9 (completada) → Documentación y ejemplos de API
-10. T10 → Contenedorización y CI
+| Nº | Tarea | Prioridad | Dependencias | Resultados Esperados | Categoría |
+|----|-------|-----------|--------------|----------------------|-----------|
+| 8 | Ajustar la suite de tests para cubrir nuevos flujos JWT, validaciones de negocio, paginación y errores estandarizados; habilitar fixtures de datos y cobertura en CI. | Alta | 4, 6, 7 | Tests verdes reflejando las reglas actuales y pipeline de calidad confiable. | Ajustes necesarios en tests |
+| 9 | Documentar y versionar el contrato de API (OpenAPI/README) alineado al nuevo manejo de errores, seguridad y configuración; preparar templates de despliegue. | Media | 5, 7, 8 | Documentación actualizada y lista para operaciones y handover. | Corrección de inconsistencias detectadas |
