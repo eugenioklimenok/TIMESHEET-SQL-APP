@@ -1,14 +1,26 @@
+import logging
 from datetime import date
 from uuid import UUID
 
 from fastapi import HTTPException, status
+from fastapi.responses import JSONResponse
 from sqlalchemy import func
 from sqlmodel import Session, select
 
 from app import crud
 from app.models import TimesheetHeader, TimesheetItem, User
 from app.models.timesheet import TimesheetStatus
-from app.schemas import TimesheetCreate, TimesheetItemCreate, TimesheetItemUpdate, TimesheetUpdate
+from app.schemas import (
+    TimesheetActionResponse,
+    TimesheetCreate,
+    TimesheetDetail,
+    TimesheetItemCreate,
+    TimesheetItemUpdate,
+    TimesheetUpdate,
+)
+
+
+logger = logging.getLogger(__name__)
 
 
 def _validate_period(period_start, period_end) -> None:
@@ -16,17 +28,18 @@ def _validate_period(period_start, period_end) -> None:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="El periodo no es válido")
 
 
-def _validate_transition(current_status: TimesheetStatus, new_status: TimesheetStatus | None) -> None:
-    if new_status is None:
-        return
+def _action_error(status_code: int, message: str) -> JSONResponse:
+    return JSONResponse(
+        status_code=status_code,
+        content={"success": False, "error": {"code": status_code, "message": message}},
+    )
 
-    allowed = {
-        TimesheetStatus.DRAFT: {TimesheetStatus.DRAFT, TimesheetStatus.SUBMITTED},
-        TimesheetStatus.SUBMITTED: {TimesheetStatus.SUBMITTED, TimesheetStatus.APPROVED},
-        TimesheetStatus.APPROVED: {TimesheetStatus.APPROVED},
-    }
-    if new_status not in allowed[current_status]:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Transición de estado inválida")
+
+def _build_action_response(timesheet: TimesheetHeader) -> TimesheetActionResponse:
+    return TimesheetActionResponse(
+        success=True,
+        timesheet=TimesheetDetail.model_validate(timesheet),
+    )
 
 
 def _ensure_owner_or_admin(timesheet: TimesheetHeader, current_user: User) -> None:
@@ -125,12 +138,13 @@ def update_timesheet(
 ) -> TimesheetHeader:
     timesheet = get_timesheet(session, timesheet_id, current_user)
 
-    target_status = timesheet_in.status or timesheet.status
-    _validate_transition(timesheet.status, timesheet_in.status)
+    if timesheet_in.status is not None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Las transiciones de estado deben usar los endpoints dedicados",
+        )
 
-    if timesheet.status != TimesheetStatus.DRAFT and not (
-        timesheet.status == TimesheetStatus.SUBMITTED and timesheet_in.status == TimesheetStatus.APPROVED
-    ):
+    if timesheet.status != TimesheetStatus.DRAFT:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Solo puedes actualizar partes en Draft")
 
     new_period_start = timesheet_in.period_start or timesheet.period_start
@@ -147,9 +161,6 @@ def update_timesheet(
         )
 
     update_data = timesheet_in.model_dump(exclude_unset=True)
-    if "status" not in update_data:
-        update_data["status"] = target_status
-
     updated_timesheet = crud.update_timesheet(session, timesheet, TimesheetUpdate(**update_data))
     return updated_timesheet
 
@@ -162,6 +173,69 @@ def delete_timesheet(session: Session, timesheet_id: UUID, current_user: User) -
             detail="Solo puedes eliminar partes en estado Draft",
         )
     crud.delete_timesheet(session, timesheet)
+
+
+def submit_timesheet(
+    session: Session, timesheet_id: UUID, current_user: User
+) -> TimesheetActionResponse | JSONResponse:
+    timesheet = crud.get_timesheet(session, timesheet_id)
+    if not timesheet:
+        return _action_error(status.HTTP_404_NOT_FOUND, "Parte de horas no encontrado")
+
+    if timesheet.user_id != current_user.id:
+        return _action_error(status.HTTP_403_FORBIDDEN, "Solo el dueño puede enviar este parte de horas")
+
+    if timesheet.status != TimesheetStatus.DRAFT:
+        return _action_error(status.HTTP_409_CONFLICT, "Solo los partes en Draft pueden enviarse")
+
+    updated = crud.update_timesheet(
+        session, timesheet, TimesheetUpdate(status=TimesheetStatus.SUBMITTED)
+    )
+    logger.info("Timesheet %s enviado por usuario %s", timesheet.id, current_user.id)
+    refreshed = crud.get_timesheet(session, updated.id) or updated
+    return _build_action_response(refreshed)
+
+
+def approve_timesheet(
+    session: Session, timesheet_id: UUID, current_user: User
+) -> TimesheetActionResponse | JSONResponse:
+    if current_user.role != "admin":
+        return _action_error(status.HTTP_403_FORBIDDEN, "Solo un admin puede aprobar partes de horas")
+
+    timesheet = crud.get_timesheet(session, timesheet_id)
+    if not timesheet:
+        return _action_error(status.HTTP_404_NOT_FOUND, "Parte de horas no encontrado")
+
+    if timesheet.status != TimesheetStatus.SUBMITTED:
+        return _action_error(status.HTTP_409_CONFLICT, "Solo puedes aprobar partes en estado Submitted")
+
+    updated = crud.update_timesheet(
+        session, timesheet, TimesheetUpdate(status=TimesheetStatus.APPROVED)
+    )
+    logger.info("Timesheet %s aprobado por admin %s", timesheet.id, current_user.id)
+    refreshed = crud.get_timesheet(session, updated.id) or updated
+    return _build_action_response(refreshed)
+
+
+def reject_timesheet(
+    session: Session, timesheet_id: UUID, current_user: User
+) -> TimesheetActionResponse | JSONResponse:
+    if current_user.role != "admin":
+        return _action_error(status.HTTP_403_FORBIDDEN, "Solo un admin puede rechazar partes de horas")
+
+    timesheet = crud.get_timesheet(session, timesheet_id)
+    if not timesheet:
+        return _action_error(status.HTTP_404_NOT_FOUND, "Parte de horas no encontrado")
+
+    if timesheet.status != TimesheetStatus.SUBMITTED:
+        return _action_error(status.HTTP_409_CONFLICT, "Solo puedes rechazar partes en estado Submitted")
+
+    updated = crud.update_timesheet(
+        session, timesheet, TimesheetUpdate(status=TimesheetStatus.REJECTED)
+    )
+    logger.info("Timesheet %s rechazado por admin %s", timesheet.id, current_user.id)
+    refreshed = crud.get_timesheet(session, updated.id) or updated
+    return _build_action_response(refreshed)
 
 
 def create_timesheet_item(

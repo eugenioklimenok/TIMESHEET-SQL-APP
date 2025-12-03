@@ -14,6 +14,8 @@ from app.schemas.timesheet import (
     TimesheetItemCreate,
     TimesheetItemRead,
     TimesheetItemUpdate,
+    TimesheetDetail,
+    TimesheetActionResponse,
     TimesheetRead,
     TimesheetUpdate,
 )
@@ -28,6 +30,8 @@ __all__ = [
     "TimesheetItemCreate",
     "TimesheetItemRead",
     "TimesheetItemUpdate",
+    "TimesheetDetail",
+    "TimesheetActionResponse",
     "TimesheetRead",
     "TimesheetUpdate",
     "Token",

@@ -15,6 +15,7 @@ class TimesheetStatus(str, Enum):
     DRAFT = "Draft"
     SUBMITTED = "Submitted"
     APPROVED = "Approved"
+    REJECTED = "Rejected"
 
 
 class TimesheetHeader(SQLModel, table=True):

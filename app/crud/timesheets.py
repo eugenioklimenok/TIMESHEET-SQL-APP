@@ -2,6 +2,7 @@ from datetime import date
 from typing import List, Optional
 from uuid import UUID
 
+from sqlalchemy.orm import selectinload
 from sqlmodel import Session, select
 
 from app.models import TimesheetHeader, TimesheetItem
@@ -19,7 +20,12 @@ def list_timesheets(session: Session, user_id: Optional[UUID] = None) -> List[Ti
 
 
 def get_timesheet(session: Session, timesheet_id: UUID) -> Optional[TimesheetHeader]:
-    return session.get(TimesheetHeader, timesheet_id)
+    statement = (
+        select(TimesheetHeader)
+        .where(TimesheetHeader.id == timesheet_id)
+        .options(selectinload(TimesheetHeader.items))
+    )
+    return session.exec(statement).first()
 
 
 def find_overlapping_timesheet(
