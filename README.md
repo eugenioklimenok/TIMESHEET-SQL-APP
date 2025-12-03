@@ -1,6 +1,6 @@
 # ⏱️ TimeSheet App --- Backend (PostgreSQL + FastAPI + SQLModel)
 
-Proyecto profesional creado por **Alex (ERP Insider LATAM)**.\
+Proyecto profesional creado por **Alex Evgueni Kliemnok (ERP Insider LATAM)**.\
 El objetivo es construir un backend moderno, modular y escalable para
 gestionar:
 
