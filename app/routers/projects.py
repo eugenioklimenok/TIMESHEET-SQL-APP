@@ -4,11 +4,9 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query, status
 from sqlmodel import Session
 
-from app import crud
-from app.core.errors import AuthorizationException, BusinessRuleException, NotFoundException
 from app.core.dependencies import get_session
 from app.core.security import get_current_user, role_required
-from app.models import Project, User
+from app.models import User
 from app.schemas import (
     ErrorResponse,
     ProjectCreate,
@@ -19,6 +17,7 @@ from app.schemas import (
     ProjectRead,
     ProjectUpdate,
 )
+from app.services import projects as project_service
 
 router = APIRouter(
     prefix="/projects",
@@ -37,40 +36,13 @@ project_error_responses = {
 }
 
 
-def _require_admin(user: User) -> None:
-    if user.role != "admin":
-        raise AuthorizationException("Only admins can perform this action", status_code=status.HTTP_403_FORBIDDEN)
-
-
-def _get_ordering(ordering: Optional[str]):
-    column_map = {
-        "created_at": Project.created_at,
-        "updated_at": Project.updated_at,
-        "name": Project.name,
-        "code": Project.code,
-    }
-    value = ordering or "-created_at"
-    descending = value.startswith("-")
-    column = column_map.get(value.lstrip("-"), Project.created_at)
-    return column.desc() if descending else column.asc()
-
-
 @router.post("/", response_model=ProjectRead, status_code=status.HTTP_201_CREATED, responses=project_error_responses)
 def create_project(
     project_in: ProjectCreate,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ) -> ProjectRead:
-    _require_admin(current_user)
-
-    if crud.get_project_by_code(session, project_in.code):
-        raise BusinessRuleException(
-            "Project code already exists",
-            status_code=status.HTTP_409_CONFLICT,
-            details={"code": project_in.code},
-        )
-
-    project = crud.create_project_v2(session, project_in)
+    project = project_service.create_project(session, current_user, project_in)
     return ProjectRead.model_validate(project)
 
 
@@ -82,8 +54,9 @@ def list_projects(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ) -> ProjectListResponse:
-    order_by = _get_ordering(ordering)
-    projects, total = crud.list_projects_v2(session, current_user, limit, offset, order_by)
+    projects, total = project_service.list_projects(
+        session, current_user, limit, offset, ordering
+    )
     return ProjectListResponse(
         results=[ProjectRead.model_validate(project) for project in projects],
         total=total,
@@ -98,15 +71,7 @@ def get_project(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ) -> ProjectRead:
-    project = crud.get_project_v2(session, project_id)
-    if not project:
-        raise NotFoundException("Project not found")
-
-    if current_user.role != "admin":
-        membership = crud.get_membership(session, project_id, current_user.id)
-        if not membership:
-            raise AuthorizationException("Not authorized to view this project", status_code=status.HTTP_403_FORBIDDEN)
-
+    project = project_service.get_project(session, current_user, project_id)
     return ProjectRead.model_validate(project)
 
 
@@ -117,22 +82,7 @@ def update_project(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ) -> ProjectRead:
-    _require_admin(current_user)
-
-    project = crud.get_project_v2(session, project_id)
-    if not project:
-        raise NotFoundException("Project not found")
-
-    if project_in.code:
-        existing = crud.get_project_by_code(session, project_in.code)
-        if existing and existing.id != project_id:
-            raise BusinessRuleException(
-                "Project code already exists",
-                status_code=status.HTTP_409_CONFLICT,
-                details={"code": project_in.code},
-            )
-
-    updated = crud.update_project_v2(session, project, project_in)
+    updated = project_service.update_project(session, current_user, project_id, project_in)
     return ProjectRead.model_validate(updated)
 
 
@@ -144,13 +94,7 @@ def delete_project(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ) -> None:
-    _require_admin(current_user)
-
-    project = crud.get_project_v2(session, project_id)
-    if not project:
-        raise NotFoundException("Project not found")
-
-    crud.delete_project_v2(session, project)
+    project_service.delete_project(session, current_user, project_id)
 
 
 @router.post(
@@ -164,24 +108,7 @@ def add_member(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ) -> dict[str, str]:
-    _require_admin(current_user)
-
-    project = crud.get_project_v2(session, project_id)
-    if not project:
-        raise NotFoundException("Project not found")
-
-    user = crud.get_user(session, member_in.user_id)
-    if not user:
-        raise NotFoundException("User not found")
-
-    if crud.get_membership(session, project_id, member_in.user_id):
-        raise BusinessRuleException(
-            "User already assigned to this project",
-            status_code=status.HTTP_409_CONFLICT,
-            details={"user_id": str(member_in.user_id)},
-        )
-
-    crud.add_member(session, project, member_in)
+    project_service.add_member(session, current_user, project_id, member_in)
     return {"detail": "User added"}
 
 
@@ -191,16 +118,7 @@ def list_members(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ) -> ProjectMemberList:
-    project = crud.get_project_v2(session, project_id)
-    if not project:
-        raise NotFoundException("Project not found")
-
-    if current_user.role != "admin":
-        membership = crud.get_membership(session, project_id, current_user.id)
-        if not membership:
-            raise AuthorizationException("Not authorized to view members", status_code=status.HTTP_403_FORBIDDEN)
-
-    memberships = crud.list_members(session, project_id)
+    memberships = project_service.list_members(session, current_user, project_id)
     results = [
         ProjectMemberRead(
             user_id=membership.user_id,
@@ -224,15 +142,5 @@ def remove_member(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ) -> dict[str, str]:
-    _require_admin(current_user)
-
-    project = crud.get_project_v2(session, project_id)
-    if not project:
-        raise NotFoundException("Project not found")
-
-    membership = crud.get_membership(session, project_id, user_id)
-    if not membership:
-        raise NotFoundException("User not found in this project")
-
-    crud.remove_member(session, membership)
+    project_service.remove_member(session, current_user, project_id, user_id)
     return {"detail": "User removed"}
