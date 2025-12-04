@@ -8,8 +8,8 @@ from app import crud
 from app.core.errors import BusinessRuleException, NotFoundException
 from app.core.dependencies import get_session
 from app.core.security import role_required
-from app.schemas import ErrorResponse
-from app.schemas.account import AccountCreate, AccountRead, AccountUpdate, ProjectCreate, ProjectRead, ProjectUpdate
+from app.schemas import ErrorResponse, ProjectCreate, ProjectRead, ProjectUpdate
+from app.schemas.account import AccountCreate, AccountRead, AccountUpdate
 
 router = APIRouter(
     prefix="/accounts",
@@ -94,11 +94,11 @@ def create_project(
     if not account:
         raise NotFoundException("Cuenta no encontrada")
 
-    if project_in.project_id and crud.get_by_project_id(session, project_in.project_id):
+    if project_in.code and crud.get_project_by_code(session, project_in.code):
         raise BusinessRuleException(
             "Ya existe un proyecto con ese identificador",
             status_code=status.HTTP_409_CONFLICT,
-            details={"project_id": project_in.project_id},
+            details={"code": project_in.code},
         )
 
     project = crud.create_project(

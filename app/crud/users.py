@@ -1,8 +1,10 @@
 from typing import List, Optional
 from uuid import UUID
 
+from fastapi import status
 from sqlmodel import Session, select
 
+from app.core.errors import BusinessRuleException
 from app.models import User, UserProfile
 from app.schemas import UserCreate, UserProfileUpdate, UserUpdate
 
@@ -24,6 +26,18 @@ def get_by_user_id(session: Session, user_id: str) -> Optional[User]:
 
 
 def create(session: Session, user_in: UserCreate, hashed_password: str) -> User:
+    if get_by_email(session, user_in.email):
+        raise BusinessRuleException(
+            "Ya existe un usuario con ese correo electrónico",
+            status_code=status.HTTP_400_BAD_REQUEST,
+            details={"email": user_in.email},
+        )
+    if get_by_user_id(session, user_in.user_id):
+        raise BusinessRuleException(
+            "Ya existe un usuario con ese código",
+            status_code=status.HTTP_400_BAD_REQUEST,
+            details={"user_id": user_in.user_id},
+        )
     user = User(**user_in.model_dump(exclude={"password"}), hashed_password=hashed_password)
     session.add(user)
     session.commit()
@@ -34,6 +48,22 @@ def create(session: Session, user_in: UserCreate, hashed_password: str) -> User:
 def update(session: Session, user: User, user_in: UserUpdate, hashed_password: str | None = None) -> User:
     update_data = user_in.model_dump(exclude_unset=True)
     update_data.pop("password", None)
+    if "email" in update_data:
+        existing_email = get_by_email(session, update_data["email"])
+        if existing_email and existing_email.id != user.id:
+            raise BusinessRuleException(
+                "Ya existe un usuario con ese correo electrónico",
+                status_code=status.HTTP_400_BAD_REQUEST,
+                details={"email": update_data["email"]},
+            )
+    if "user_id" in update_data:
+        existing_user_id = get_by_user_id(session, update_data["user_id"])
+        if existing_user_id and existing_user_id.id != user.id:
+            raise BusinessRuleException(
+                "Ya existe un usuario con ese código",
+                status_code=status.HTTP_400_BAD_REQUEST,
+                details={"user_id": update_data["user_id"]},
+            )
     for field, value in update_data.items():
         setattr(user, field, value)
     if hashed_password:

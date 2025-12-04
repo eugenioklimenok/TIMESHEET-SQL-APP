@@ -39,7 +39,6 @@ class Project(SQLModel, table=True):
     __tablename__ = "projects"
 
     id: UUID = Field(default_factory=uuid4, primary_key=True, index=True)
-    project_id: str = Field(sa_column=Column(String(25), unique=True, nullable=False, index=True))
     code: str = Field(sa_column=Column(String(16), unique=True, nullable=False, index=True))
     name: str = Field(sa_column=Column(String(100), nullable=False))
     account_uuid: Optional[UUID] = Field(default=None, foreign_key="accounts.id")

@@ -3,9 +3,11 @@ from __future__ import annotations
 from typing import Any, List, Optional
 from uuid import UUID
 
+from fastapi import status
 from sqlalchemy import func
 from sqlmodel import Session, select
 
+from app.core.errors import BusinessRuleException
 from app.models import Project, User, UserProjectMembership
 from app.schemas.project import ProjectCreate, ProjectMemberCreate, ProjectUpdate
 
@@ -43,9 +45,13 @@ def list_projects(
 
 
 def create_project(session: Session, project_in: ProjectCreate) -> Project:
-    project_data = project_in.model_dump()
-    project_data["project_id"] = project_in.code
-    project = Project(**project_data)
+    if get_project_by_code(session, project_in.code):
+        raise BusinessRuleException(
+            "Project code already exists",
+            status_code=status.HTTP_409_CONFLICT,
+            details={"code": project_in.code},
+        )
+    project = Project(**project_in.model_dump())
     session.add(project)
     session.commit()
     session.refresh(project)
@@ -54,10 +60,16 @@ def create_project(session: Session, project_in: ProjectCreate) -> Project:
 
 def update_project(session: Session, project: Project, project_in: ProjectUpdate) -> Project:
     update_data = project_in.model_dump(exclude_unset=True)
+    if "code" in update_data:
+        existing = get_project_by_code(session, update_data["code"])
+        if existing and existing.id != project.id:
+            raise BusinessRuleException(
+                "Project code already exists",
+                status_code=status.HTTP_409_CONFLICT,
+                details={"code": update_data["code"]},
+            )
     for field, value in update_data.items():
         setattr(project, field, value)
-        if field == "code":
-            project.project_id = value
     session.add(project)
     session.commit()
     session.refresh(project)

@@ -11,6 +11,8 @@ class ProjectBase(BaseModel):
 
     name: str
     code: str = Field(max_length=16)
+    account_uuid: Optional[UUID] = None
+    status_id: Optional[int] = 1
     description: Optional[str] = None
     client_name: Optional[str] = None
     is_active: bool = True
@@ -25,6 +27,8 @@ class ProjectUpdate(BaseModel):
 
     name: Optional[str] = None
     code: Optional[str] = Field(default=None, max_length=16)
+    account_uuid: Optional[UUID] = None
+    status_id: Optional[int] = None
     description: Optional[str] = None
     client_name: Optional[str] = None
     is_active: Optional[bool] = None
