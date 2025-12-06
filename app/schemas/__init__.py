@@ -1,5 +1,5 @@
 from app.schemas.account import AccountCreate, AccountRead, AccountUpdate
-from app.schemas.auth import Token, TokenData
+from app.schemas.auth import Token, TokenData, TokenRefreshRequest
 from app.schemas.project import (
     ProjectListResponse,
     ProjectMemberCreate,
@@ -49,6 +49,7 @@ __all__ = [
     "UserProjectHoursReport",
     "Token",
     "TokenData",
+    "TokenRefreshRequest",
     "UserCreate",
     "UserRead",
     "UserUpdate",

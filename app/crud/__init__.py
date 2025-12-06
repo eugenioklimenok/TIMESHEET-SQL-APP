@@ -29,6 +29,7 @@ from app.crud.reports import (  # noqa: F401
     aggregate_user_projects,
     summarize_hours_by_status,
 )
+from app.crud.auth import create_refresh_token, get_refresh_token_by_jti, revoke_refresh_token
 from app.crud.timesheets import (  # noqa: F401
     create_item,
     create_timesheet,
@@ -81,6 +82,9 @@ __all__ = [
     "aggregate_hours_by_user",
     "aggregate_user_projects",
     "summarize_hours_by_status",
+    "create_refresh_token",
+    "get_refresh_token_by_jti",
+    "revoke_refresh_token",
     "create_item",
     "create_timesheet",
     "delete_item",

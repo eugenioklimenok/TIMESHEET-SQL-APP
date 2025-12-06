@@ -1,5 +1,7 @@
 from datetime import datetime
 from typing import List, Optional, TYPE_CHECKING
+from datetime import datetime
+from typing import List, Optional, TYPE_CHECKING
 from uuid import UUID, uuid4
 
 from sqlalchemy import Column, DateTime, String, text
@@ -9,6 +11,7 @@ from app.models.project_membership import UserProjectMembership
 
 if TYPE_CHECKING:
     from app.models.account import Account, Project
+    from app.models.refresh_token import RefreshToken
     from app.models.timesheet import TimesheetHeader
     from app.models.user_profile import UserProfile
 
@@ -49,4 +52,5 @@ class User(SQLModel, table=True):
     )
     project_memberships: List["UserProjectMembership"] = Relationship(back_populates="user")
     projects: List["Project"] = Relationship(back_populates="members", link_model=UserProjectMembership)
+    refresh_tokens: List["RefreshToken"] = Relationship(back_populates="user")
 
