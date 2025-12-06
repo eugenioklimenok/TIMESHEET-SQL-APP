@@ -21,10 +21,17 @@ Resumen Fase 1 – Tarea 2 (Completada): Se consolidaron los identificadores de 
 
 ## Fase 2: Seguridad y configuración profesional
 
-| Nº | Tarea | Prioridad | Dependencias | Resultados Esperados | Categoría |
-|----|-------|-----------|--------------|----------------------|-----------|
-| 4 | Implementar seguridad JWT profesional con PyJWT y passlib: firmas HS256/RS256 configurables por entorno, expiración, refresh tokens y revocación básica. | Crítica | 1, 3 | Autenticación robusta, claves rotables y tokens alineados a mejores prácticas. | Seguridad JWT profesional |
-| 5 | Crear configuración profesional con `pydantic-settings`, `.env.example`, perfiles dev/test/prod y contenedores Docker/Compose para API + PostgreSQL + healthchecks. | Alta | 4 | Despliegues reproducibles, variables centralizadas y arranque local/CI consistente. | Configuración profesional (Docker, settings, etc.) |
+| Nº | Tarea | Prioridad | Dependencias | Resultados Esperados | Categoría | Estado |
+|----|-------|-----------|--------------|----------------------|-----------|--------|
+| 4 | Implementar seguridad JWT profesional con PyJWT y passlib: firmas HS256/RS256 configurables por entorno, expiración, refresh tokens y revocación básica. | Crítica | 1, 3 | Autenticación robusta, claves rotables y tokens alineados a mejores prácticas. | Seguridad JWT profesional | **COMPLETADA** |
+| 5 | Crear configuración profesional con `pydantic-settings`, `.env.example`, perfiles dev/test/prod y contenedores Docker/Compose para API + PostgreSQL + healthchecks. | Alta | 4 | Despliegues reproducibles, variables centralizadas y arranque local/CI consistente. | Configuración profesional (Docker, settings, etc.) | Pendiente |
+
+**Resumen técnico Tarea 4**
+- Implementación de tokens de acceso y refresco con expiraciones diferenciadas.
+- Creación del router `/auth` con endpoints de login, refresh y logout.
+- Nuevo servicio `services/auth` para autenticación, rotación y revocación de tokens.
+- Extensión de `security.py` con validación de tipo de token y configuración de expiraciones.
+- Gestión de revocación mediante almacén de refresh tokens persistente.
 
 ## Fase 3: Reglas de negocio y experiencia de datos
 

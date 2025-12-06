@@ -1,3 +1,3 @@
-from app.services import accounts, projects, reports, timesheets, users
+from app.services import accounts, auth, projects, reports, timesheets, users
 
-__all__ = ["accounts", "projects", "timesheets", "reports", "users"]
+__all__ = ["accounts", "auth", "projects", "timesheets", "reports", "users"]

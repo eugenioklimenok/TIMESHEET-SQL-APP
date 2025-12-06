@@ -9,6 +9,7 @@ import os
 import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Optional
+from uuid import UUID
 
 from fastapi import Depends, status
 from fastapi.security import OAuth2PasswordBearer
@@ -23,7 +24,9 @@ from app.schemas import TokenData
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 SECRET_KEY = os.getenv("SECRET_KEY", "change-me")
-ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
+ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "15"))
+REFRESH_TOKEN_EXPIRE_DAYS = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", "7"))
 
 
 def _b64encode(data: bytes) -> str:
@@ -36,6 +39,8 @@ def _b64decode(data: str) -> bytes:
 
 
 def _sign(data: bytes) -> str:
+    if ALGORITHM != "HS256":  # pragma: no cover - placeholder para futuros algoritmos
+        raise AuthorizationException("Algoritmo de firma no soportado")
     signature = hmac.new(SECRET_KEY.encode(), data, hashlib.sha256).digest()
     return _b64encode(signature)
 
@@ -56,10 +61,14 @@ def get_password_hash(password: str) -> str:
     return f"{salt}${_b64encode(hashed)}"
 
 
-def create_access_token(subject: str, expires_delta: Optional[timedelta] = None) -> str:
-    expire_time = datetime.now(timezone.utc) + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
-    header = {"alg": "HS256", "typ": "JWT"}
-    payload = {"sub": subject, "exp": int(expire_time.timestamp())}
+def create_token(
+    *, subject: str, expires_delta: timedelta, token_type: str, jti: str | None = None
+) -> str:
+    expire_time = datetime.now(timezone.utc) + expires_delta
+    header = {"alg": ALGORITHM, "typ": "JWT"}
+    payload = {"sub": subject, "exp": int(expire_time.timestamp()), "type": token_type}
+    if jti:
+        payload["jti"] = jti
 
     header_b64 = _b64encode(json.dumps(header, separators=(",", ":")).encode())
     payload_b64 = _b64encode(json.dumps(payload, separators=(",", ":")).encode())
@@ -68,7 +77,24 @@ def create_access_token(subject: str, expires_delta: Optional[timedelta] = None)
     return f"{header_b64}.{payload_b64}.{signature_b64}"
 
 
-def decode_token(token: str) -> dict:
+def create_access_token(subject: str, expires_delta: Optional[timedelta] = None) -> str:
+    return create_token(
+        subject=subject,
+        expires_delta=expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
+        token_type="access",
+    )
+
+
+def create_refresh_token(subject: str, jti: str, expires_delta: Optional[timedelta] = None) -> str:
+    return create_token(
+        subject=subject,
+        expires_delta=expires_delta or timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS),
+        token_type="refresh",
+        jti=jti,
+    )
+
+
+def decode_token(token: str, *, expected_type: str | None = None) -> dict:
     try:
         header_b64, payload_b64, signature_b64 = token.split(".")
     except ValueError as exc:
@@ -88,16 +114,10 @@ def decode_token(token: str) -> dict:
     if exp is not None and datetime.fromtimestamp(exp, tz=timezone.utc) < datetime.now(timezone.utc):
         raise AuthorizationException("Token expirado")
 
+    if expected_type and payload.get("type") != expected_type:
+        raise AuthorizationException("Tipo de token inválido")
+
     return payload
-
-
-def authenticate_user(session: Session, email: str, password: str) -> Optional[User]:
-    user = crud.get_by_email(session, email)
-    if not user or not user.hashed_password:
-        return None
-    if not verify_password(password, user.hashed_password):
-        return None
-    return user
 
 
 def get_current_user(
@@ -106,15 +126,20 @@ def get_current_user(
     credentials_exception = AuthorizationException("No se pudieron validar las credenciales")
 
     try:
-        payload = decode_token(token)
+        payload = decode_token(token, expected_type="access")
         subject: Optional[str] = payload.get("sub")
         if subject is None:
             raise credentials_exception
-        token_data = TokenData(sub=subject)
+        token_data = TokenData(sub=subject, token_type="access", jti=payload.get("jti"))
     except AuthorizationException:
         raise credentials_exception
 
-    user = crud.get_by_email(session, token_data.sub)
+    try:
+        user_id = UUID(subject)
+    except ValueError:
+        raise credentials_exception
+
+    user = crud.get_user(session, user_id)
     if not user:
         raise credentials_exception
     return user
